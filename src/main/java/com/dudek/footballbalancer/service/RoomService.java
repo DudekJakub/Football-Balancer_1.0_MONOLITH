@@ -121,8 +121,10 @@ public class RoomService {
         targetRoomFromDb.setPublic(requestDto.isPublic());
 
         if (requestDto.getLocation() != null) {
-            FieldLocation editedLocation = fieldLocationMapper.requestDtoToFieldLocation(requestDto.getLocation());
-            targetRoomFromDb.setFieldLocation(editedLocation);
+            targetRoomFromDb.getFieldLocation().setCity(requestDto.getLocation().getCity());
+            targetRoomFromDb.getFieldLocation().setZipCode(requestDto.getLocation().getZipCode());
+            targetRoomFromDb.getFieldLocation().setStreet(requestDto.getLocation().getStreet());
+            targetRoomFromDb.getFieldLocation().setNumber(requestDto.getLocation().getNumber());
         }
     }
 
