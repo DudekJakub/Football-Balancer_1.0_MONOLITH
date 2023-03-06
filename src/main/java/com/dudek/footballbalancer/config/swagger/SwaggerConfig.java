@@ -16,6 +16,6 @@ public class SwaggerConfig {
                 .info(new Info()
                         .title("Monolith Service API")
                         .description("This API provides access to basic app resources, such as ROOM/PLAYER/SKILL etc.")
-                        .version("0.5.0"));
+                        .version("0.7.0"));
     }
 }
