@@ -21,8 +21,11 @@ public class RoomEnteredResponseDto {
     private String name;
     private FieldLocationSimpleDto location;
     private boolean isPublic;
+    private boolean isRegistrationForNextMatchOpen;
     private String description;
     private LocalDateTime nextMatchDate;
+    private LocalDateTime nextMatchRegistrationStartDate;
+    private LocalDateTime nextMatchRegistrationEndDate;
     private List<PlayerSimpleDto> players;
     private List<UserSimpleDto> users;
     private List<UserSimpleDto> admins;

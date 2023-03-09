@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
+import java.sql.Date;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
@@ -36,8 +39,11 @@ public class RoomMapperImpl implements RoomMapper {
                 .name(room.getName())
                 .location(fieldLocationMapper.fieldLocationToSimpleDto(room.getFieldLocation()))
                 .isPublic(room.isPublic())
+                .isRegistrationForNextMatchOpen(isRegistrationForNextMatchOpen(room))
                 .description(room.getDescription())
                 .nextMatchDate(room.getNextMatchDate())
+                .nextMatchRegistrationStartDate(room.getNextMatchRegistrationStartDate())
+                .nextMatchRegistrationEndDate(room.getNextMatchRegistrationEndDate())
                 .players(playerMapper.playerCollectionToSimpleDtoList(room.getPlayersInRoom()))
                 .users(userMapper.userCollectionToSimpleDtoList(room.getUsersInRoom()))
                 .admins(userMapper.userCollectionToSimpleDtoList(room.getAdminsInRoom()))
@@ -52,6 +58,7 @@ public class RoomMapperImpl implements RoomMapper {
                 .isPublic(room.isPublic())
                 .description(room.getDescription())
                 .admins(userMapper.userCollectionToSimpleDtoList(room.getAdminsInRoom()))
+                .users(userMapper.userCollectionToSimpleDtoList(room.getUsersInRoom()))
                 .location(fieldLocationMapper.fieldLocationToSimpleDto(room.getFieldLocation()))
                 .build();
     }
@@ -76,10 +83,19 @@ public class RoomMapperImpl implements RoomMapper {
                         .id(room.getId())
                         .name(room.getName())
                         .usersInRoomQuantity((long) room.getUsersInRoom().size())
+                        .isRegistrationForNextMatchOpen(isRegistrationForNextMatchOpen(room))
                         .isUserInRoom(isUserInRoom.test(room))
                         .isPublic(room.isPublic())
                         .city(room.getFieldLocation().getCity())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    private boolean isRegistrationForNextMatchOpen(final Room room) {
+        if (room.getNextMatchRegistrationStartDate() != null && room.getNextMatchRegistrationEndDate() != null) {
+            return room.getNextMatchRegistrationStartDate().isBefore(LocalDateTime.now()) &&
+                   room.getNextMatchRegistrationEndDate().isAfter(LocalDateTime.now());
+        }
+        return false;
     }
 }

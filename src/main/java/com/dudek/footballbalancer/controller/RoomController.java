@@ -74,4 +74,22 @@ public class RoomController {
     public void updateNextMatchDate(@PathVariable Long roomId, @RequestParam(value = "adminId") Long adminId, @RequestParam(value = "date") @DateTimeFormat(pattern = "MMMM dd yyyy'T'HH:mm:ss.SSS'Z'") String dateString) {
         roomService.updateNextMatchDate(roomId, adminId, dateString);
     }
+
+    @PatchMapping("/next-match-registration-start-date/{roomId}")
+    @SecurityRequirement(name = "JWT")
+    public void updateNextMatchRegistrationStartDate(@PathVariable Long roomId, @RequestParam(value = "adminId") Long adminId, @RequestParam(value = "date") @DateTimeFormat(pattern = "MMMM dd yyyy'T'HH:mm:ss.SSS'Z'") String dateString) {
+        roomService.updateNextMatchRegistrationStartDate(roomId, adminId, dateString);
+    }
+
+    @PatchMapping("/next-match-registration-end-date/{roomId}")
+    @SecurityRequirement(name = "JWT")
+    public void updateNextMatchRegistrationEndDate(@PathVariable Long roomId, @RequestParam(value = "adminId") Long adminId, @RequestParam(value = "date") @DateTimeFormat(pattern = "MMMM dd yyyy'T'HH:mm:ss.SSS'Z'") String dateString) {
+        roomService.updateNextMatchRegistrationEndDate(roomId, adminId, dateString);
+    }
+
+    @PatchMapping("/next-match-all-dates/{roomId}")
+    @SecurityRequirement(name = "JWT")
+    public void updateNextMatchAllDates(@PathVariable Long roomId, @RequestParam(value = "adminId") Long adminId, @RequestBody RoomNewDatesRequestDto requestDto) {
+        roomService.updateNextMatchAllDates(roomId, adminId, requestDto);
+    }
 }

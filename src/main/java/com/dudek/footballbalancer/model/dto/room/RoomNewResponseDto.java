@@ -20,4 +20,5 @@ public class RoomNewResponseDto {
     private String description;
     private FieldLocationSimpleDto location;
     private List<UserSimpleDto> admins;
+    private List<UserSimpleDto> users;
 }

@@ -13,8 +13,6 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.util.List;
 import java.util.Optional;
-import java.util.ServiceLoader;
-import java.util.stream.Collectors;
 
 @Repository
 public interface RoomRepository extends JpaRepository<Room, Long> {
@@ -33,7 +31,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             "LEFT JOIN FETCH r.usersInRoom " +
             "LEFT JOIN FETCH r.adminsInRoom " +
             "WHERE r.id = :id")
-    Optional<Room> findByIdFetchPlayersAndUsers(@Param("id") Long id);
+    Optional<Room> findByIdFetchPlayersUsersAdmins(@Param("id") Long id);
 
     @Query(value = "SELECT r FROM Room r " +
                     "LEFT JOIN FETCH r.usersInRoom u " +

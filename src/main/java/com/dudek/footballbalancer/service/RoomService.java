@@ -9,6 +9,9 @@ import com.dudek.footballbalancer.model.entity.Room;
 import com.dudek.footballbalancer.model.entity.User;
 import com.dudek.footballbalancer.repository.RoomRepository;
 import com.dudek.footballbalancer.repository.UserRepository;
+import com.dudek.footballbalancer.service.geocoding.GeocodingService;
+import com.dudek.footballbalancer.validation.DateValidator;
+import com.google.maps.model.LatLng;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,14 +24,10 @@ import javax.transaction.Transactional;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,14 +38,16 @@ public class RoomService {
     private final RoomMapper roomMapper;
     private final FieldLocationMapper fieldLocationMapper;
     private final PasswordEncryptor passwordEncryptor;
+    private final GeocodingService geocodingService;
 
     @Autowired
-    public RoomService(final RoomRepository roomRepository, final UserRepository userRepository, final RoomMapper roomMapper, final FieldLocationMapper fieldLocationMapper, final PasswordEncryptor passwordEncryptor) {
+    public RoomService(final RoomRepository roomRepository, final UserRepository userRepository, final RoomMapper roomMapper, final FieldLocationMapper fieldLocationMapper, final PasswordEncryptor passwordEncryptor, final GeocodingService geocodingService) {
         this.roomRepository = roomRepository;
         this.userRepository = userRepository;
         this.roomMapper = roomMapper;
         this.fieldLocationMapper = fieldLocationMapper;
         this.passwordEncryptor = passwordEncryptor;
+        this.geocodingService = geocodingService;
     }
 
     public List<RoomSimpleDto> findPaginated(int pageNumber, int pageSize, Sort.Direction sortDirection, String sortField, boolean fetchPublic, Long userId) {
@@ -63,8 +64,17 @@ public class RoomService {
         return roomMapper.roomCollectionToRoomSimpleDtoList(paginated, userId);
     }
 
+    public List<RoomSimpleDto> findRoomByNameOrLocation(String roomNameOrLocation) {
+        List<Room> foundRooms = roomRepository.findByNameContainsIgnoreCaseOrFieldLocation_CityContainsIgnoreCaseOrFieldLocation_StreetContainsIgnoreCase(roomNameOrLocation, roomNameOrLocation, roomNameOrLocation)
+                .stream()
+                .filter(Room::isPublic)
+                .collect(Collectors.toList());
+
+        return roomMapper.roomCollectionToRoomSimpleDtoList(foundRooms, null);
+    }
+
     public RoomEnteredResponseDto enterRoom(final RoomEnterRequestDto requestDto){
-        final Room targetRoomFromDb = roomRepository.findByIdFetchPlayersAndUsers(requestDto.getRoomId())
+        final Room targetRoomFromDb = roomRepository.findByIdFetchPlayersUsersAdmins(requestDto.getRoomId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         boolean isUserAlreadyInRoom = targetRoomFromDb.getUsersInRoom().stream()
@@ -99,6 +109,9 @@ public class RoomService {
 
         if (requestDto.getLocation() != null) {
             FieldLocation roomLocation = fieldLocationMapper.requestDtoToFieldLocation(requestDto.getLocation());
+            LatLng latLngFromRoomLocation = getLatLngFromRoomLocation(roomLocation);
+            roomLocation.setLatitude(latLngFromRoomLocation.lat);
+            roomLocation.setLongitude(latLngFromRoomLocation.lng);
             newRoom.setFieldLocation(roomLocation);
         } else {
             newRoom.setFieldLocation(FieldLocation.builder()
@@ -121,33 +134,81 @@ public class RoomService {
         targetRoomFromDb.setPublic(requestDto.isPublic());
 
         if (requestDto.getLocation() != null) {
-            targetRoomFromDb.getFieldLocation().setCity(requestDto.getLocation().getCity());
-            targetRoomFromDb.getFieldLocation().setZipCode(requestDto.getLocation().getZipCode());
-            targetRoomFromDb.getFieldLocation().setStreet(requestDto.getLocation().getStreet());
-            targetRoomFromDb.getFieldLocation().setNumber(requestDto.getLocation().getNumber());
+            FieldLocation roomLocation = fieldLocationMapper.requestDtoToFieldLocation(requestDto.getLocation());
+            LatLng latLngFromRoomLocation = getLatLngFromRoomLocation(roomLocation);
+            roomLocation.setLatitude(latLngFromRoomLocation.lat);
+            roomLocation.setLongitude(latLngFromRoomLocation.lng);
+            targetRoomFromDb.setFieldLocation(roomLocation);
         }
     }
 
     @Transactional
     public void updateNextMatchDate(final Long roomId, final Long adminId, final String dateString) {
         final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(roomId, adminId);
+        LocalDateTime nextMatchLocalDateTime = parseDateString(dateString);
+        LocalDateTime nextMatchRegistrationStartDate = targetRoomFromDb.getNextMatchRegistrationStartDate();
+        LocalDateTime nextMatchRegistrationEndDate = targetRoomFromDb.getNextMatchRegistrationEndDate();
 
-        DateFormat format = new SimpleDateFormat("MMMM dd yyyy'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
-        Date date;
-
-        try {
-            date = format.parse(dateString);
-        } catch (ParseException e) {
-            System.out.println(e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        if (nextMatchRegistrationStartDate != null && nextMatchRegistrationEndDate != null) {
+            boolean allDatesNotNullAndInOrder = DateValidator.allDatesNotNullAndInOrder(nextMatchRegistrationStartDate, nextMatchRegistrationEndDate, nextMatchLocalDateTime);
+            if (allDatesNotNullAndInOrder) {
+                targetRoomFromDb.setNextMatchDate(nextMatchLocalDateTime);
+            } else {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided date is in incorrect order (must be after registration start & end date) or is not present.");
+            }
+        } else {
+            targetRoomFromDb.setNextMatchDate(nextMatchLocalDateTime);
         }
+    }
 
-        Instant instant = date.toInstant();
-        ZoneId zone = ZoneId.systemDefault();
-        ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(instant, zone);
-        LocalDateTime nextMatchLocalDateTime = zonedDateTime.toLocalDateTime();
+    @Transactional
+    public void updateNextMatchRegistrationStartDate(final Long roomId, final Long adminId, final String dateString) {
+        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(roomId, adminId);
+        LocalDateTime nextMatchLocalDateTime = targetRoomFromDb.getNextMatchDate();
+        LocalDateTime nextMatchRegistrationStartDate = parseDateString(dateString);
+        LocalDateTime nextMatchRegistrationEndDate = targetRoomFromDb.getNextMatchRegistrationEndDate();
 
-        targetRoomFromDb.setNextMatchDate(nextMatchLocalDateTime);
+        boolean allDatesNotNullAndInOrder = DateValidator.allDatesNotNullAndInOrder(nextMatchRegistrationStartDate, nextMatchRegistrationEndDate, nextMatchLocalDateTime);
+
+        if (allDatesNotNullAndInOrder) {
+            targetRoomFromDb.setNextMatchRegistrationStartDate(nextMatchRegistrationStartDate);
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided date is in incorrect order (must be before registration end date and before match date) or is not present.");
+        }
+    }
+
+    @Transactional
+    public void updateNextMatchRegistrationEndDate(final Long roomId, final Long adminId, final String dateString) {
+        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(roomId, adminId);
+        LocalDateTime nextMatchLocalDateTime = targetRoomFromDb.getNextMatchDate();
+        LocalDateTime nextMatchRegistrationStartDate = targetRoomFromDb.getNextMatchRegistrationStartDate();
+        LocalDateTime nextMatchRegistrationEndDate = parseDateString(dateString);
+
+        boolean allDatesNotNullAndInOrder = DateValidator.allDatesNotNullAndInOrder(nextMatchRegistrationStartDate, nextMatchRegistrationEndDate, nextMatchLocalDateTime);
+
+        if (allDatesNotNullAndInOrder) {
+            targetRoomFromDb.setNextMatchRegistrationEndDate(nextMatchRegistrationEndDate);
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided date is in incorrect order (must be after registration start date and before match date) or is not present.");
+        }
+    }
+
+    @Transactional
+    public void updateNextMatchAllDates(Long roomId, Long adminId, RoomNewDatesRequestDto requestDto) {
+        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(roomId, adminId);
+        LocalDateTime nextMatchLocalDateTime = parseDateString(requestDto.getNextMatchDate());
+        LocalDateTime nextMatchRegistrationStartDate = parseDateString(requestDto.getNextMatchRegistrationStartDate());
+        LocalDateTime nextMatchRegistrationEndDate = parseDateString(requestDto.getNextMatchRegistrationEndDate());
+
+        boolean allDatesNotNullAndInOrder = DateValidator.allDatesNotNullAndInOrder(nextMatchRegistrationStartDate, nextMatchRegistrationEndDate, nextMatchLocalDateTime);
+
+        if (allDatesNotNullAndInOrder) {
+            targetRoomFromDb.setNextMatchDate(nextMatchLocalDateTime);
+            targetRoomFromDb.setNextMatchRegistrationStartDate(nextMatchRegistrationStartDate);
+            targetRoomFromDb.setNextMatchRegistrationEndDate(nextMatchRegistrationEndDate);
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided dates are in incorrect order or are not present.");
+        }
     }
 
     @Transactional
@@ -188,12 +249,25 @@ public class RoomService {
         return targetRoomFromDb;
     }
 
-    public List<RoomSimpleDto> findRoomByNameOrLocation(String roomNameOrLocation) {
-        List<Room> foundRooms = roomRepository.findByNameContainsIgnoreCaseOrFieldLocation_CityContainsIgnoreCaseOrFieldLocation_StreetContainsIgnoreCase(roomNameOrLocation, roomNameOrLocation, roomNameOrLocation)
-                .stream()
-                .filter(Room::isPublic)
-                .collect(Collectors.toList());
+    private LocalDateTime parseDateString(final String dateString) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.GERMANY);
 
-        return roomMapper.roomCollectionToRoomSimpleDtoList(foundRooms, null);
+        try {
+            OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateString, formatter);
+            return offsetDateTime.toLocalDateTime();
+        } catch (DateTimeParseException e) {
+            System.out.println(e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    private LatLng getLatLngFromRoomLocation(final FieldLocation fieldLocation) {
+        String address = fieldLocation.getStreet() + " " + fieldLocation.getNumber() + ", " + fieldLocation.getCity() + ", Poland";
+        try {
+            return geocodingService.getLatLng(address);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return new LatLng(0,0);
+        }
     }
 }

@@ -35,6 +35,10 @@ public class Room {
 
     private LocalDateTime nextMatchDate;
 
+    private LocalDateTime nextMatchRegistrationStartDate;
+
+    private LocalDateTime nextMatchRegistrationEndDate;
+
     @ManyToOne(fetch = FetchType.LAZY, cascade = { CascadeType.MERGE, CascadeType.PERSIST })
     @JoinColumn(name = "field_location_id")
     private FieldLocation fieldLocation;
