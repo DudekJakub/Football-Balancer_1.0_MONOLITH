@@ -15,6 +15,8 @@ public class FieldLocationMapperImpl implements FieldLocationMapper {
                 .zipCode(fieldLocation.getZipCode())
                 .street(fieldLocation.getStreet())
                 .number(fieldLocation.getNumber())
+                .latitude(fieldLocation.getLatitude())
+                .longitude(fieldLocation.getLongitude())
                 .build();
     }
 
@@ -25,7 +27,6 @@ public class FieldLocationMapperImpl implements FieldLocationMapper {
                 .zipCode(simpleDto.getZipCode())
                 .street(simpleDto.getStreet())
                 .number(simpleDto.getNumber())
-                .coordinates(simpleDto.getCoordinates())
                 .build();
     }
 }

@@ -14,4 +14,6 @@ public class FieldLocationSimpleDto {
     private String zipCode;
     private String street;
     private int number;
+    private double latitude;
+    private double longitude;
 }

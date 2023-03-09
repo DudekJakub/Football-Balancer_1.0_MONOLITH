@@ -1,6 +1,7 @@
 package com.dudek.footballbalancer.model.entity;
 
 import lombok.*;
+import org.bouncycastle.asn1.its.Latitude;
 import org.springframework.data.geo.Point;
 
 import javax.persistence.*;
@@ -27,7 +28,9 @@ public class FieldLocation {
 
     private int number;
 
-    private Point coordinates;
+    private double latitude;
+
+    private double longitude;
 
     @OneToMany(mappedBy = "fieldLocation", cascade = CascadeType.MERGE)
     private Set<Room> room = new HashSet<>();
