@@ -1,12 +1,17 @@
 package com.dudek.footballbalancer.model.entity;
 
+import com.dudek.footballbalancer.model.entity.request.Request;
+import com.dudek.footballbalancer.model.entity.request.RequestableEntity;
+import com.dudek.footballbalancer.model.entity.request.RoomRequestable;
 import lombok.*;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -15,11 +20,7 @@ import java.util.Set;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Room {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Room extends RequestableEntity implements RoomRequestable {
 
     @NotBlank
     @Size(min = 3, max = 30)
@@ -65,4 +66,17 @@ public class Room {
 
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
     private Set<MatchFormationStrategy> formationStrategies = new HashSet<>();
+
+    @OneToMany(mappedBy = "requestable", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Request> requests = new ArrayList<>();
+
+    @Override
+    public void addUserRequest(Request request) {
+        requests.add(request);
+    }
+
+    @Override
+    public void linkUserToPlayerRequest(Request request) {
+        requests.add(request);
+    }
 }
