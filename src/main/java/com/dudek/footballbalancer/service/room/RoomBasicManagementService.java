@@ -1,4 +1,4 @@
-package com.dudek.footballbalancer.service;
+package com.dudek.footballbalancer.service.room;
 
 import com.dudek.footballbalancer.config.security.PasswordEncryptor;
 import com.dudek.footballbalancer.mapper.FieldLocationMapper;
@@ -21,9 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.transaction.Transactional;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -31,7 +28,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class RoomService {
+public class RoomBasicManagementService implements RoomService {
 
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
@@ -41,7 +38,8 @@ public class RoomService {
     private final GeocodingService geocodingService;
 
     @Autowired
-    public RoomService(final RoomRepository roomRepository, final UserRepository userRepository, final RoomMapper roomMapper, final FieldLocationMapper fieldLocationMapper, final PasswordEncryptor passwordEncryptor, final GeocodingService geocodingService) {
+    public RoomBasicManagementService(final RoomRepository roomRepository, final UserRepository userRepository, final RoomMapper roomMapper,
+                                      final FieldLocationMapper fieldLocationMapper, final PasswordEncryptor passwordEncryptor, final GeocodingService geocodingService) {
         this.roomRepository = roomRepository;
         this.userRepository = userRepository;
         this.roomMapper = roomMapper;
@@ -73,7 +71,7 @@ public class RoomService {
         return roomMapper.roomCollectionToRoomSimpleDtoList(foundRooms, null);
     }
 
-    public RoomEnteredResponseDto enterRoom(final RoomEnterRequestDto requestDto){
+    public RoomEnteredResponseDto enterRoom(final RoomEnterRequestDto requestDto) {
         final Room targetRoomFromDb = roomRepository.findByIdFetchPlayersUsersAdmins(requestDto.getRoomId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
@@ -127,7 +125,7 @@ public class RoomService {
 
     @Transactional
     public void updateRoom(final Long roomId, final RoomEditRequestDto requestDto) {
-        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(roomId, requestDto.getUserRequestSenderId());
+        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(roomId, requestDto.getUserRequestSenderId(), roomRepository);
 
         targetRoomFromDb.setName(requestDto.getName());
         targetRoomFromDb.setDescription(requestDto.getDescription());
@@ -143,59 +141,8 @@ public class RoomService {
     }
 
     @Transactional
-    public void updateNextMatchDate(final Long roomId, final Long adminId, final String dateString) {
-        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(roomId, adminId);
-        LocalDateTime nextMatchLocalDateTime = parseDateString(dateString);
-        LocalDateTime nextMatchRegistrationStartDate = targetRoomFromDb.getNextMatchRegistrationStartDate();
-        LocalDateTime nextMatchRegistrationEndDate = targetRoomFromDb.getNextMatchRegistrationEndDate();
-
-        if (nextMatchRegistrationStartDate != null && nextMatchRegistrationEndDate != null) {
-            boolean allDatesNotNullAndInOrder = DateValidator.allDatesNotNullAndInOrder(nextMatchRegistrationStartDate, nextMatchRegistrationEndDate, nextMatchLocalDateTime);
-            if (allDatesNotNullAndInOrder) {
-                targetRoomFromDb.setNextMatchDate(nextMatchLocalDateTime);
-            } else {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided date is in incorrect order (must be after registration start & end date) or is not present.");
-            }
-        } else {
-            targetRoomFromDb.setNextMatchDate(nextMatchLocalDateTime);
-        }
-    }
-
-    @Transactional
-    public void updateNextMatchRegistrationStartDate(final Long roomId, final Long adminId, final String dateString) {
-        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(roomId, adminId);
-        LocalDateTime nextMatchLocalDateTime = targetRoomFromDb.getNextMatchDate();
-        LocalDateTime nextMatchRegistrationStartDate = parseDateString(dateString);
-        LocalDateTime nextMatchRegistrationEndDate = targetRoomFromDb.getNextMatchRegistrationEndDate();
-
-        boolean allDatesNotNullAndInOrder = DateValidator.allDatesNotNullAndInOrder(nextMatchRegistrationStartDate, nextMatchRegistrationEndDate, nextMatchLocalDateTime);
-
-        if (allDatesNotNullAndInOrder) {
-            targetRoomFromDb.setNextMatchRegistrationStartDate(nextMatchRegistrationStartDate);
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided date is in incorrect order (must be before registration end date and before match date) or is not present.");
-        }
-    }
-
-    @Transactional
-    public void updateNextMatchRegistrationEndDate(final Long roomId, final Long adminId, final String dateString) {
-        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(roomId, adminId);
-        LocalDateTime nextMatchLocalDateTime = targetRoomFromDb.getNextMatchDate();
-        LocalDateTime nextMatchRegistrationStartDate = targetRoomFromDb.getNextMatchRegistrationStartDate();
-        LocalDateTime nextMatchRegistrationEndDate = parseDateString(dateString);
-
-        boolean allDatesNotNullAndInOrder = DateValidator.allDatesNotNullAndInOrder(nextMatchRegistrationStartDate, nextMatchRegistrationEndDate, nextMatchLocalDateTime);
-
-        if (allDatesNotNullAndInOrder) {
-            targetRoomFromDb.setNextMatchRegistrationEndDate(nextMatchRegistrationEndDate);
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided date is in incorrect order (must be after registration start date and before match date) or is not present.");
-        }
-    }
-
-    @Transactional
-    public void updateNextMatchAllDates(Long roomId, Long adminId, RoomNewDatesRequestDto requestDto) {
-        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(roomId, adminId);
+    public void updateNextMatchDates(Long roomId, Long adminId, RoomNewDatesRequestDto requestDto) {
+        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(roomId, adminId, roomRepository);
         LocalDateTime nextMatchLocalDateTime = parseDateString(requestDto.getNextMatchDate());
         LocalDateTime nextMatchRegistrationStartDate = parseDateString(requestDto.getNextMatchRegistrationStartDate());
         LocalDateTime nextMatchRegistrationEndDate = parseDateString(requestDto.getNextMatchRegistrationEndDate());
@@ -209,44 +156,6 @@ public class RoomService {
         } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided dates are in incorrect order or are not present.");
         }
-    }
-
-    @Transactional
-    public RoomNewUserResponseDto addUserToRoom(final RoomAddOrRemoveUserRequestDto requestDto) {
-        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(requestDto.getRoomId(), requestDto.getAdminId());
-
-        User userToAddFromDb = userRepository.findById(requestDto.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-        targetRoomFromDb.getUsersInRoom().add(userToAddFromDb);
-
-        return roomMapper.roomToRoomNewUserResponseDto(targetRoomFromDb, userToAddFromDb);
-    }
-
-    @Transactional
-    public void removeUserFromRoom(final RoomAddOrRemoveUserRequestDto requestDto) {
-        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(requestDto.getRoomId(), requestDto.getAdminId());
-
-        User userToAddFromDb = userRepository.findById(requestDto.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-        targetRoomFromDb.getUsersInRoom().remove(userToAddFromDb);
-    }
-
-    private Room obtainRoomFromDbAndCheckAdminPermission(final Long roomId, final Long adminId) {
-        final Room targetRoomFromDb = roomRepository.findByIdFetchAdmins(roomId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-        boolean isGivenAdminIdAccordant = targetRoomFromDb.getAdminsInRoom().stream()
-                .map(User::getId)
-                .collect(Collectors.toList())
-                .contains(adminId);
-
-        if (!isGivenAdminIdAccordant) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
-
-        return targetRoomFromDb;
     }
 
     private LocalDateTime parseDateString(final String dateString) {

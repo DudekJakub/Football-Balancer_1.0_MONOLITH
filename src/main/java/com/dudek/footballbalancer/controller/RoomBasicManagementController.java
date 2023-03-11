@@ -1,7 +1,7 @@
 package com.dudek.footballbalancer.controller;
 
 import com.dudek.footballbalancer.model.dto.room.*;
-import com.dudek.footballbalancer.service.RoomService;
+import com.dudek.footballbalancer.service.room.RoomBasicManagementService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,15 +12,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/room")
-@Tag(name = "Room", description = "This API provides all operations about room.")
-public class RoomController {
+@RequestMapping("/api/room/basic-management")
+@Tag(name = "Room", description = "This API provides basic operations about room such as CREATE/ENTER/UPDATE/FIND.")
+public class RoomBasicManagementController {
 
-    private final RoomService roomService;
+    private final RoomBasicManagementService roomBasicManagementService;
 
     @Autowired
-    public RoomController(final RoomService roomService) {
-        this.roomService = roomService;
+    public RoomBasicManagementController(final RoomBasicManagementService roomBasicManagementService) {
+        this.roomBasicManagementService = roomBasicManagementService;
     }
 
     @GetMapping("/paginated")
@@ -32,7 +32,7 @@ public class RoomController {
             @RequestParam(value = "fetchPublic", defaultValue = "true") boolean fetchPublic,
             @RequestParam(value = "userId", defaultValue = "0", required = false) long userId
     ) {
-        return roomService.findPaginated(pageNumber, pageSize, sortDirection, sortField, fetchPublic, userId);
+        return roomBasicManagementService.findPaginated(pageNumber, pageSize, sortDirection, sortField, fetchPublic, userId);
     }
 
     @GetMapping("/paginated/{userId}")
@@ -43,53 +43,34 @@ public class RoomController {
             @RequestParam(value = "sortDirection", defaultValue = "ASC") Sort.Direction sortDirection,
             @PathVariable("userId") Long userId
     ) {
-        return roomService.findPaginatedByUserId(pageNumber, pageSize, sortDirection, sortField, userId);
+        return roomBasicManagementService.findPaginatedByUserId(pageNumber, pageSize, sortDirection, sortField, userId);
     }
 
     @GetMapping("/search")
     public List<RoomSimpleDto> findRoomByNameOrLocation(@RequestParam(name = "searchItem") String roomNameOrLocation) {
-        return roomService.findRoomByNameOrLocation(roomNameOrLocation);
+        return roomBasicManagementService.findRoomByNameOrLocation(roomNameOrLocation);
     }
 
     @PostMapping("/enter")
     @SecurityRequirement(name = "JWT")
     public RoomEnteredResponseDto enterRoom(@RequestBody RoomEnterRequestDto requestDto) {
-        return roomService.enterRoom(requestDto);
+        return roomBasicManagementService.enterRoom(requestDto);
     }
-
     @PostMapping
     @SecurityRequirement(name = "JWT")
     public RoomNewResponseDto createRoom(@RequestBody RoomNewRequestDto requestDto) {
-        return roomService.createRoom(requestDto);
+        return roomBasicManagementService.createRoom(requestDto);
     }
 
     @PutMapping("/{roomId}")
     @SecurityRequirement(name = "JWT")
     public void updateRoom(@PathVariable Long roomId, @RequestBody RoomEditRequestDto requestDto) {
-        roomService.updateRoom(roomId, requestDto);
-    }
-
-    @PatchMapping("/next-match-date/{roomId}")
-    @SecurityRequirement(name = "JWT")
-    public void updateNextMatchDate(@PathVariable Long roomId, @RequestParam(value = "adminId") Long adminId, @RequestParam(value = "date") @DateTimeFormat(pattern = "MMMM dd yyyy'T'HH:mm:ss.SSS'Z'") String dateString) {
-        roomService.updateNextMatchDate(roomId, adminId, dateString);
-    }
-
-    @PatchMapping("/next-match-registration-start-date/{roomId}")
-    @SecurityRequirement(name = "JWT")
-    public void updateNextMatchRegistrationStartDate(@PathVariable Long roomId, @RequestParam(value = "adminId") Long adminId, @RequestParam(value = "date") @DateTimeFormat(pattern = "MMMM dd yyyy'T'HH:mm:ss.SSS'Z'") String dateString) {
-        roomService.updateNextMatchRegistrationStartDate(roomId, adminId, dateString);
-    }
-
-    @PatchMapping("/next-match-registration-end-date/{roomId}")
-    @SecurityRequirement(name = "JWT")
-    public void updateNextMatchRegistrationEndDate(@PathVariable Long roomId, @RequestParam(value = "adminId") Long adminId, @RequestParam(value = "date") @DateTimeFormat(pattern = "MMMM dd yyyy'T'HH:mm:ss.SSS'Z'") String dateString) {
-        roomService.updateNextMatchRegistrationEndDate(roomId, adminId, dateString);
+        roomBasicManagementService.updateRoom(roomId, requestDto);
     }
 
     @PatchMapping("/next-match-all-dates/{roomId}")
     @SecurityRequirement(name = "JWT")
-    public void updateNextMatchAllDates(@PathVariable Long roomId, @RequestParam(value = "adminId") Long adminId, @RequestBody RoomNewDatesRequestDto requestDto) {
-        roomService.updateNextMatchAllDates(roomId, adminId, requestDto);
+    public void updateNextMatchDates(@PathVariable Long roomId, @RequestParam(value = "adminId") Long adminId, @RequestBody RoomNewDatesRequestDto requestDto) {
+        roomBasicManagementService.updateNextMatchDates(roomId, adminId, requestDto);
     }
 }
