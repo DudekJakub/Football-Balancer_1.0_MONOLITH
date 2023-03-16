@@ -1,9 +1,10 @@
 package com.dudek.footballbalancer.service.message;
 
-import com.dudek.footballbalancer.model.entity.message.MessageEvent;
-import org.springframework.amqp.core.TopicExchange;
+import com.dudek.footballbalancer.model.message.AbstractMessageEvent;
 
 public interface MessageService {
 
-    void sendMessageForTopic(TopicExchange topicExchange, String routingKey, MessageEvent messageEvent);
+    void sendMessageForRoomAdmins(AbstractMessageEvent messageEvent, Long roomId);
+    void sendMessageForRoomUsers(AbstractMessageEvent messageEvent, Long roomId);
+    void sendMessageForPrivateUser(AbstractMessageEvent messageEvent, Long userId);
 }

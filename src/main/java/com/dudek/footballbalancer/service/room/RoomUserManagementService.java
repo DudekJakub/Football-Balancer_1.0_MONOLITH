@@ -51,4 +51,12 @@ public class RoomUserManagementService implements RoomService {
 
         return userToRemoveFromDb.getId();
     }
+
+    public boolean isUserMemberOfRoom(final Long userId, final Long roomId) {
+        return roomRepository.isUserMemberOfRoom(userId, roomId);
+    }
+
+    public boolean isAdminOfRoom(final Long adminId, final Long roomId) {
+        return roomRepository.isAdminOfRoom(adminId, roomId);
+    }
 }

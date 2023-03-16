@@ -30,7 +30,7 @@ public class RoomBasicManagementController {
             @RequestParam(value = "sortField", defaultValue = "id") String sortField,
             @RequestParam(value = "sortDirection", defaultValue = "ASC") Sort.Direction sortDirection,
             @RequestParam(value = "fetchPublic", defaultValue = "true") boolean fetchPublic,
-            @RequestParam(value = "userId", defaultValue = "0", required = false) long userId
+            @RequestParam(value = "userId", defaultValue = "0") long userId
     ) {
         return roomBasicManagementService.findPaginated(pageNumber, pageSize, sortDirection, sortField, fetchPublic, userId);
     }

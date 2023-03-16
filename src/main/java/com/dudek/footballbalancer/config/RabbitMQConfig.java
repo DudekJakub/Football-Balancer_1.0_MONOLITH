@@ -28,4 +28,9 @@ public class RabbitMQConfig {
     public TopicExchange roomExchange() {
         return new TopicExchange("roomExchange");
     }
+
+    @Bean
+    public TopicExchange privateUserExchange() {
+        return new TopicExchange("privateUserExchange");
+    }
 }

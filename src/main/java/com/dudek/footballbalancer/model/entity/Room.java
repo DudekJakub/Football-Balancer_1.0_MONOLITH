@@ -71,12 +71,12 @@ public class Room extends RequestableEntity implements RoomRequestable {
     private List<Request> requests = new ArrayList<>();
 
     @Override
-    public void addUserRequest(Request request) {
+    public void addRequest(Request request) {
         requests.add(request);
     }
 
     @Override
-    public void linkUserToPlayerRequest(Request request) {
-        requests.add(request);
+    public void removeRequest(Request request) {
+        requests.remove(request);
     }
 }

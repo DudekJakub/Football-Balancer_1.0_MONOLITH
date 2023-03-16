@@ -5,9 +5,7 @@ import com.dudek.footballbalancer.model.dto.room.RoomNewUserResponseDto;
 import com.dudek.footballbalancer.service.room.RoomUserManagementService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/room/user-management")
@@ -21,13 +19,22 @@ public class RoomUserManagementController {
         this.roomUserManagementService = roomUserManagementService;
     }
 
+    @GetMapping("/validate-user-for-room")
+    public boolean isUserMemberOfRoom(@RequestParam("userId") Long userId, @RequestParam("roomId") Long roomId) {
+        return roomUserManagementService.isUserMemberOfRoom(userId, roomId);
+    }
+
+    @GetMapping("/validate-admin-for-room")
+    public boolean isAdminOfRoom(@RequestParam("adminId") Long adminId, @RequestParam("roomId") Long roomId) {
+        return roomUserManagementService.isAdminOfRoom(adminId, roomId);
+    }
     @PostMapping("/add")
-    public RoomNewUserResponseDto addUserToRoom(final RoomAddOrRemoveUserRequestDto requestDto) {
+    public RoomNewUserResponseDto addUserToRoom(@RequestBody RoomAddOrRemoveUserRequestDto requestDto) {
         return roomUserManagementService.addUserToRoom(requestDto);
     }
 
     @PostMapping("/remove")
-    public Long removeUserFromRoom(final RoomAddOrRemoveUserRequestDto requestDto) {
+    public Long removeUserFromRoom(@RequestBody RoomAddOrRemoveUserRequestDto requestDto) {
         return roomUserManagementService.removeUserFromRoom(requestDto);
     }
 }

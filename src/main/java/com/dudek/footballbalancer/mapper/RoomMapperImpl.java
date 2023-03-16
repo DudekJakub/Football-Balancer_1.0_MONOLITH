@@ -73,7 +73,7 @@ public class RoomMapperImpl implements RoomMapper {
     }
 
     @Override
-    public List<RoomSimpleDto> roomCollectionToRoomSimpleDtoList(Collection<Room> roomCollection, @Nullable Long userId) {
+    public List<RoomSimpleDto> roomCollectionToRoomSimpleDtoList(Collection<Room> roomCollection, Long userId) {
         Predicate<Room> isUserInRoom = room -> room.getUsersInRoom()
                 .stream()
                 .anyMatch(user -> user.getId().equals(userId));

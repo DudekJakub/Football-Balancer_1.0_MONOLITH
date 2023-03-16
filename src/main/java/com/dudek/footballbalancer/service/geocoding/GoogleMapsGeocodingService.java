@@ -17,7 +17,6 @@ public class GoogleMapsGeocodingService implements GeocodingService {
     String googleMapsApiKey;
 
     public GoogleMapsGeocodingService() {
-        System.out.println(googleMapsApiKey);
         this.context = new GeoApiContext.Builder()
                 .apiKey("AIzaSyBxj3q-F4tZMmiZhsiagyvTKXfFoazQwvE")
                 .build();

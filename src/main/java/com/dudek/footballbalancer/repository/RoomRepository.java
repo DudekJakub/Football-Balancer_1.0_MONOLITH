@@ -34,18 +34,26 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     Optional<Room> findByIdFetchPlayersUsersAdmins(@Param("id") Long id);
 
     @Query(value = "SELECT r FROM Room r " +
-                    "LEFT JOIN FETCH r.usersInRoom u " +
+                    "LEFT JOIN FETCH r.usersInRoom " +
                     "LEFT JOIN FETCH r.fieldLocation " +
-                    "WHERE r.isPublic = :fetchPublic AND u.id <> :userId",
+                    "WHERE r.isPublic = :fetchPublic AND NOT EXISTS (SELECT 1 FROM r.usersInRoom ur WHERE ur.id = :userId)",
           countQuery = "SELECT COUNT(r) FROM Room r LEFT JOIN r.usersInRoom LEFT JOIN r.fieldLocation")
-    Page<Room> findPaginatedFetchUsersInRoomAndLocation(Pageable pageable,@Param("fetchPublic") boolean fetchPublic, Long userId);
+    Page<Room> findPaginatedFetchUsersInRoomAndLocation(Pageable pageable, @Param("fetchPublic") boolean fetchPublic, @Param("userId") Long userId);
 
     @Query(value = "SELECT r FROM Room r " +
                     "LEFT JOIN FETCH r.usersInRoom user " +
                     "LEFT JOIN FETCH r.fieldLocation " +
-                    "WHERE user.id = :userId",
+                    "WHERE r IN (SELECT DISTINCT r1 FROM Room r1 LEFT JOIN r1.usersInRoom u1 WHERE u1.id = :userId)",
            countQuery = "SELECT COUNT(r) FROM Room r LEFT JOIN r.usersInRoom user LEFT JOIN r.fieldLocation")
     Page<Room> findPaginatedFetchUsersInRoomAndLocationByUserId(Pageable pageable, @Param("userId") Long userId);
 
     List<Room> findByNameContainsIgnoreCaseOrFieldLocation_CityContainsIgnoreCaseOrFieldLocation_StreetContainsIgnoreCase(@NotBlank @Size(min = 3, max = 30) String name, String fieldLocation_city, String fieldLocation_street);
+
+    @Query(value = "SELECT COUNT(r) > 0 FROM Room r " +
+                    "JOIN r.usersInRoom u WHERE r.id = :roomId AND u.id = :userId")
+    boolean isUserMemberOfRoom(@Param("userId") Long userId, @Param("roomId") Long roomId);
+
+    @Query(value = "SELECT COUNT(r) > 0 FROM Room r " +
+                    "JOIN r.adminsInRoom u WHERE r.id = :roomId AND u.id = :adminId")
+    boolean isAdminOfRoom(@Param("adminId") Long adminId, @Param("roomId") Long roomId);
 }
