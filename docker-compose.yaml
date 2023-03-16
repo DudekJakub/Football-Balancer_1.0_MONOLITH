@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8
+    container_name: football_balancer_mysql_db
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: footballBalancer
+      MYSQL_USER: footballBalancer_user
+      MYSQL_PASSWORD: footballBalancer_password
+    ports:
+      - "3306:3306"
+
+  mongodb:
+    image: mongo
+    container_name: football_balancer_mongo_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+
+  mongo-express:
+    image: mongo-express
+    container_name: football_balancer_mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: root
+      ME_CONFIG_MONGODB_SERVER: mongodb
+
+  rabbitmq:
+    image: rabbitmq:3.9-management
+    container_name: football_balancer_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: always
+
+volumes:
+  db_data:
+  mongo_data:
+  cache:
+    driver: local
+
+networks:
+  default:
+    name: mongodb_network
