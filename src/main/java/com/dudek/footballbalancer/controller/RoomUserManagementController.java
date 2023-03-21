@@ -5,6 +5,7 @@ import com.dudek.footballbalancer.model.dto.room.RoomNewUserResponseDto;
 import com.dudek.footballbalancer.service.room.RoomUserManagementService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,21 +21,21 @@ public class RoomUserManagementController {
     }
 
     @GetMapping("/validate-user-for-room")
-    public boolean isUserMemberOfRoom(@RequestParam("userId") Long userId, @RequestParam("roomId") Long roomId) {
-        return roomUserManagementService.isUserMemberOfRoom(userId, roomId);
+    public ResponseEntity<Boolean> isUserMemberOfRoom(@RequestParam("userId") Long userId, @RequestParam("roomId") Long roomId) {
+        return ResponseEntity.ok(roomUserManagementService.isUserMemberOfRoom(userId, roomId));
     }
 
     @GetMapping("/validate-admin-for-room")
-    public boolean isAdminOfRoom(@RequestParam("adminId") Long adminId, @RequestParam("roomId") Long roomId) {
-        return roomUserManagementService.isAdminOfRoom(adminId, roomId);
+    public ResponseEntity<Boolean> isAdminOfRoom(@RequestParam("adminId") Long adminId, @RequestParam("roomId") Long roomId) {
+        return ResponseEntity.ok(roomUserManagementService.isAdminOfRoom(adminId, roomId));
     }
     @PostMapping("/add")
-    public RoomNewUserResponseDto addUserToRoom(@RequestBody RoomAddOrRemoveUserRequestDto requestDto) {
-        return roomUserManagementService.addUserToRoom(requestDto);
+    public ResponseEntity<RoomNewUserResponseDto> addUserToRoom(@RequestBody RoomAddOrRemoveUserRequestDto requestDto) {
+        return ResponseEntity.ok(roomUserManagementService.addUserToRoom(requestDto));
     }
 
     @PostMapping("/remove")
-    public Long removeUserFromRoom(@RequestBody RoomAddOrRemoveUserRequestDto requestDto) {
-        return roomUserManagementService.removeUserFromRoom(requestDto);
+    public ResponseEntity<Long> removeUserFromRoom(@RequestBody RoomAddOrRemoveUserRequestDto requestDto) {
+        return ResponseEntity.ok(roomUserManagementService.removeUserFromRoom(requestDto));
     }
 }

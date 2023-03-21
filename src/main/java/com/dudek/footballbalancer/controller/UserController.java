@@ -4,6 +4,7 @@ import com.dudek.footballbalancer.model.dto.user.UserSimpleDto;
 import com.dudek.footballbalancer.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,7 +20,7 @@ public class UserController {
     }
 
     @GetMapping("/info")
-    public UserSimpleDto userInfo(@RequestParam Long userId) {
-        return userService.userInfo(userId);
+    public ResponseEntity<UserSimpleDto> userInfo(@RequestParam Long userId) {
+        return ResponseEntity.ok(userService.userInfo(userId));
     }
 }

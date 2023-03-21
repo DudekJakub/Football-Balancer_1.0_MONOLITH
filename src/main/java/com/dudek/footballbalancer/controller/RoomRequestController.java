@@ -5,6 +5,7 @@ import com.dudek.footballbalancer.model.dto.room.RoomNewUserResponseDto;
 import com.dudek.footballbalancer.service.request.RoomRequestService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,17 +21,20 @@ public class RoomRequestController {
     }
 
     @PostMapping("/new-member-request")
-    public void sendAddUserRequest(@RequestParam("roomId") Long roomId, @RequestParam("requesterId") Long requesterId) {
+    public ResponseEntity<Void> sendAddUserRequest(@RequestParam("roomId") Long roomId, @RequestParam("requesterId") Long requesterId) {
         roomRequestService.sendAddUserRequest(roomId, requesterId);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/accept-new-member-request")
-    public RoomNewUserResponseDto acceptAddUserRequest(@RequestBody RoomAddOrRemoveUserRequestDto requestDto) {
-        return roomRequestService.acceptAddUserRequest(requestDto);
+    public ResponseEntity<Void> acceptAddUserRequest(@RequestBody RoomAddOrRemoveUserRequestDto requestDto) {
+        roomRequestService.acceptAddUserRequest(requestDto);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/reject-new-member-request")
-    public void rejectAddUserRequest(@RequestBody RoomAddOrRemoveUserRequestDto requestDto) {
+    public ResponseEntity<Void> rejectAddUserRequest(@RequestBody RoomAddOrRemoveUserRequestDto requestDto) {
         roomRequestService.rejectAddUserRequest(requestDto);
+        return ResponseEntity.noContent().build();
     }
 }

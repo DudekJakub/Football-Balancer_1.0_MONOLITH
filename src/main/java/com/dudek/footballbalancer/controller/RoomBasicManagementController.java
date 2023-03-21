@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,7 +26,7 @@ public class RoomBasicManagementController {
     }
 
     @GetMapping("/paginated")
-    public List<RoomSimpleDto> findPaginated(
+    public ResponseEntity<List<RoomSimpleDto>> findPaginated(
             @RequestParam(value = "pageNo", defaultValue = "0") int pageNumber,
             @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
             @RequestParam(value = "sortField", defaultValue = "id") String sortField,
@@ -32,45 +34,47 @@ public class RoomBasicManagementController {
             @RequestParam(value = "fetchPublic", defaultValue = "true") boolean fetchPublic,
             @RequestParam(value = "userId", defaultValue = "0") long userId
     ) {
-        return roomBasicManagementService.findPaginated(pageNumber, pageSize, sortDirection, sortField, fetchPublic, userId);
+        return ResponseEntity.ok(roomBasicManagementService.findPaginated(pageNumber, pageSize, sortDirection, sortField, fetchPublic, userId));
     }
 
     @GetMapping("/paginated/{userId}")
-    public List<RoomSimpleDto> findPaginatedByUserId(
+    public ResponseEntity<List<RoomSimpleDto>> findPaginatedByUserId(
             @RequestParam(value = "pageNo", defaultValue = "0") int pageNumber,
             @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
             @RequestParam(value = "sortField", defaultValue = "id") String sortField,
             @RequestParam(value = "sortDirection", defaultValue = "ASC") Sort.Direction sortDirection,
             @PathVariable("userId") Long userId
     ) {
-        return roomBasicManagementService.findPaginatedByUserId(pageNumber, pageSize, sortDirection, sortField, userId);
+        return ResponseEntity.ok(roomBasicManagementService.findPaginatedByUserId(pageNumber, pageSize, sortDirection, sortField, userId));
     }
 
     @GetMapping("/search")
-    public List<RoomSimpleDto> findRoomByNameOrLocation(@RequestParam(name = "searchItem") String roomNameOrLocation) {
-        return roomBasicManagementService.findRoomByNameOrLocation(roomNameOrLocation);
+    public ResponseEntity<List<RoomSimpleDto>> findRoomByNameOrLocation(@RequestParam(name = "searchItem") String roomNameOrLocation) {
+        return ResponseEntity.ok(roomBasicManagementService.findRoomByNameOrLocation(roomNameOrLocation));
     }
 
     @PostMapping("/enter")
     @SecurityRequirement(name = "JWT")
-    public RoomEnteredResponseDto enterRoom(@RequestBody RoomEnterRequestDto requestDto) {
-        return roomBasicManagementService.enterRoom(requestDto);
+    public ResponseEntity<RoomEnteredResponseDto> enterRoom(@RequestBody RoomEnterRequestDto requestDto) {
+        return ResponseEntity.ok(roomBasicManagementService.enterRoom(requestDto));
     }
     @PostMapping
     @SecurityRequirement(name = "JWT")
-    public RoomNewResponseDto createRoom(@RequestBody RoomNewRequestDto requestDto) {
-        return roomBasicManagementService.createRoom(requestDto);
+    public ResponseEntity<RoomNewResponseDto> createRoom(@RequestBody RoomNewRequestDto requestDto) {
+        return ResponseEntity.ok(roomBasicManagementService.createRoom(requestDto));
     }
 
     @PutMapping("/{roomId}")
     @SecurityRequirement(name = "JWT")
-    public void updateRoom(@PathVariable Long roomId, @RequestBody RoomEditRequestDto requestDto) {
+    public ResponseEntity<Void> updateRoom(@PathVariable Long roomId, @RequestBody RoomEditRequestDto requestDto) {
         roomBasicManagementService.updateRoom(roomId, requestDto);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/next-match-all-dates/{roomId}")
     @SecurityRequirement(name = "JWT")
-    public void updateNextMatchDates(@PathVariable Long roomId, @RequestParam(value = "adminId") Long adminId, @RequestBody RoomNewDatesRequestDto requestDto) {
+    public ResponseEntity<Void> updateNextMatchDates(@PathVariable Long roomId, @RequestParam(value = "adminId") Long adminId, @RequestBody RoomNewDatesRequestDto requestDto) {
         roomBasicManagementService.updateNextMatchDates(roomId, adminId, requestDto);
+        return ResponseEntity.noContent().build();
     }
 }
