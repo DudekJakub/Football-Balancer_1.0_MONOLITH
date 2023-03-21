@@ -18,7 +18,7 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class User implements MessageParticipant {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,4 +52,14 @@ public class User {
 
     @ManyToMany(mappedBy = "usersInRoom")
     private Set<Room> roomsAsStandardUser = new HashSet<>();
+
+    @Override
+    public String getParticipantName() {
+        return this.username;
+    }
+
+    @Override
+    public Long getParticipantId() {
+        return this.id;
+    }
 }

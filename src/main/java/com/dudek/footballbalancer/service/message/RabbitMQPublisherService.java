@@ -1,6 +1,6 @@
 package com.dudek.footballbalancer.service.message;
 
-import com.dudek.footballbalancer.model.message.AbstractMessageEvent;
+import com.dudek.footballbalancer.model.message.MessageEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.annotations.common.util.impl.LoggerFactory;
@@ -16,7 +16,6 @@ public class RabbitMQPublisherService implements MessageService {
     private final RabbitTemplate rabbitTemplate;
     private final TopicExchange roomExchange;
     private final TopicExchange privateUserExchange;
-
     private final Logger logger = LoggerFactory.logger(RabbitMQPublisherService.class);
 
     @Autowired
@@ -28,7 +27,7 @@ public class RabbitMQPublisherService implements MessageService {
     }
 
     @Override
-    public void sendMessageForRoomAdmins(final AbstractMessageEvent messageEvent, final Long roomId) {
+    public void sendMessageForRoomAdmins(final MessageEvent messageEvent, final Long roomId) {
         String mappedMessage = mapMessageEvent(messageEvent);
 
         if (mappedMessage != null) {
@@ -41,7 +40,7 @@ public class RabbitMQPublisherService implements MessageService {
     }
 
     @Override
-    public void sendMessageForRoomUsers(final AbstractMessageEvent messageEvent, final Long roomId) {
+    public void sendMessageForRoomUsers(final MessageEvent messageEvent, final Long roomId) {
         String mappedMessage = mapMessageEvent(messageEvent);
 
         if (mappedMessage != null) {
@@ -54,7 +53,7 @@ public class RabbitMQPublisherService implements MessageService {
     }
 
     @Override
-    public void sendMessageForPrivateUser(final AbstractMessageEvent messageEvent, final Long userId) {
+    public void sendMessageForPrivateUser(final MessageEvent messageEvent, final Long userId) {
         String mappedMessage = mapMessageEvent(messageEvent);
 
         if (mappedMessage != null) {
@@ -66,7 +65,7 @@ public class RabbitMQPublisherService implements MessageService {
         }
     }
 
-    private String mapMessageEvent(final AbstractMessageEvent messageEvent) {
+    private String mapMessageEvent(final MessageEvent messageEvent) {
         String message;
         try {
             message = objectMapper.writeValueAsString(messageEvent);

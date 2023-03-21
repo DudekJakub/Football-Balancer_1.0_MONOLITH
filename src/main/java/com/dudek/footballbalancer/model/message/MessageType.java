@@ -2,5 +2,5 @@ package com.dudek.footballbalancer.model.message;
 
 public enum MessageType {
 
-    REQUEST
+    REQUEST, SIMPLE_MESSAGE
 }

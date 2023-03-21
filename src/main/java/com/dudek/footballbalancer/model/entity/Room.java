@@ -20,7 +20,7 @@ import java.util.Set;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Room extends RequestableEntity implements RoomRequestable {
+public class Room extends RequestableEntity implements RoomRequestable, MessageParticipant {
 
     @NotBlank
     @Size(min = 3, max = 30)
@@ -78,5 +78,15 @@ public class Room extends RequestableEntity implements RoomRequestable {
     @Override
     public void removeRequest(Request request) {
         requests.remove(request);
+    }
+
+    @Override
+    public String getParticipantName() {
+        return this.name;
+    }
+
+    @Override
+    public Long getParticipantId() {
+        return this.getId();
     }
 }
