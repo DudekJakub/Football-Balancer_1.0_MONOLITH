@@ -2,6 +2,7 @@ package com.dudek.footballbalancer.service;
 
 import com.dudek.footballbalancer.mapper.UserMapper;
 import com.dudek.footballbalancer.model.dto.user.UserSimpleDto;
+import com.dudek.footballbalancer.model.dto.user.UserSimpleDtoForRoom;
 import com.dudek.footballbalancer.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

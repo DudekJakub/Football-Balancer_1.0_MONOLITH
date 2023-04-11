@@ -20,7 +20,7 @@ public class UserController {
     }
 
     @GetMapping("/info")
-    public ResponseEntity<UserSimpleDto> userInfo(@RequestParam Long userId) {
+    public ResponseEntity<UserSimpleDto> userInfo(@RequestParam("userId") Long userId) {
         return ResponseEntity.ok(userService.userInfo(userId));
     }
 }
