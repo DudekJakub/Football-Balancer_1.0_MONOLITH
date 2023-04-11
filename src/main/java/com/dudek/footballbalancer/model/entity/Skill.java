@@ -26,7 +26,7 @@ public class Skill {
     @JoinColumn(name = "skill_template_id", nullable = false)
     private SkillTemplate skillTemplate;
 
-    @Min(value = 1L)
+    @Min(value = 0L)
     @Max(value = 20L)
     private double points;
 }
