@@ -16,7 +16,6 @@ public class MessageEvent implements Serializable {
     protected String senderName;
     protected Long senderId;
     protected Long recipientId;
-    protected List<RecipientType> recipientTypes;
     protected LocalDateTime sendTime;
     protected Enum<?> messageStatus;
     protected Enum<?> messageType;

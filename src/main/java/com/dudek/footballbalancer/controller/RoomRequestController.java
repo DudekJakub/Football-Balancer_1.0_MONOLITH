@@ -3,6 +3,7 @@ package com.dudek.footballbalancer.controller;
 import com.dudek.footballbalancer.model.dto.room.RoomAddOrRemoveUserRequestDto;
 import com.dudek.footballbalancer.model.dto.room.RoomNewUserResponseDto;
 import com.dudek.footballbalancer.service.request.RoomRequestService;
+import com.dudek.footballbalancer.validation.customAnnotation.RequiresRoomAdmin;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -27,12 +28,14 @@ public class RoomRequestController {
     }
 
     @PostMapping("/accept-new-member-request")
+    @RequiresRoomAdmin
     public ResponseEntity<Void> acceptAddUserRequest(@RequestBody RoomAddOrRemoveUserRequestDto requestDto) {
         roomRequestService.acceptAddUserRequest(requestDto);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/reject-new-member-request")
+    @RequiresRoomAdmin
     public ResponseEntity<Void> rejectAddUserRequest(@RequestBody RoomAddOrRemoveUserRequestDto requestDto) {
         roomRequestService.rejectAddUserRequest(requestDto);
         return ResponseEntity.noContent().build();

@@ -6,14 +6,13 @@ import com.dudek.footballbalancer.model.entity.User;
 import com.dudek.footballbalancer.model.entity.request.Request;
 import com.dudek.footballbalancer.model.entity.request.RequestStatus;
 import com.dudek.footballbalancer.model.entity.request.RequestType;
+import com.dudek.footballbalancer.model.entity.request.Requestable;
 import com.dudek.footballbalancer.model.message.MessageEvent;
-import com.dudek.footballbalancer.model.message.RecipientType;
 import com.dudek.footballbalancer.repository.RequestRepository;
 import com.dudek.footballbalancer.repository.RoomRepository;
 import com.dudek.footballbalancer.repository.UserRepository;
 import com.dudek.footballbalancer.service.message.MessageCreator;
 import com.dudek.footballbalancer.service.message.MessageService;
-import com.dudek.footballbalancer.service.room.RoomService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,11 +20,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
 
 @Service
-public class RoomRequestService implements RoomService {
+public class RoomRequestService {
 
     private final RoomRepository roomRepository;
     private final RequestRepository requestRepository;
@@ -51,30 +48,30 @@ public class RoomRequestService implements RoomService {
         User requesterFromDb = userRepository.findById(requesterId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        Optional<Request> newMemberRequestFromDb = requestRepository.findByRequestableAndRequesterIdAndType(targetRoomFromDb, requesterId, RequestType.NEW_MEMBER);
+        requestRepository.findByRequestableAndRequesterIdAndType(targetRoomFromDb, requesterId, RequestType.NEW_MEMBER).ifPresentOrElse(request -> {
+            if (!request.getStatus().equals(RequestStatus.REJECTED)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Request already sent or processed successfully!");
+            } else {
+                request.setStatus(RequestStatus.PENDING);
+                MessageEvent messageFromRequest = messageCreator.createMessageFromRequest(request, "New member request from user: " + requesterFromDb.getUsername());
+                messageService.sendMessageForRoomAdmins(messageFromRequest, targetRoomFromDb.getId());
+            }
+        }, () -> {
+            Request newMemberRequest = createRequest(targetRoomFromDb, requesterFromDb.getId(), requesterFromDb.getUsername(), RequestType.NEW_MEMBER);
+            Request savedNewMemberRequest = requestRepository.save(newMemberRequest);
+            targetRoomFromDb.addRequest(savedNewMemberRequest);
 
-        if (newMemberRequestFromDb.isPresent() && !newMemberRequestFromDb.get().getStatus().equals(RequestStatus.REJECTED)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Request already sent or processed!");
-        }
-
-        Request newMemberRequest = createRequest(targetRoomFromDb, requesterFromDb.getId(), requesterFromDb.getUsername(), RequestType.NEW_MEMBER);
-        Request savedNewMemberRequest = requestRepository.save(newMemberRequest);
-        targetRoomFromDb.addRequest(savedNewMemberRequest);
-
-        MessageEvent messageFromRequest = messageCreator.createMessageFromRequest(savedNewMemberRequest, List.of(RecipientType.ADMIN), "New member request from user: " + requesterFromDb.getUsername());
-        messageService.sendMessageForRoomAdmins(messageFromRequest, targetRoomFromDb.getId());
+            MessageEvent messageFromRequest = messageCreator.createMessageFromRequest(savedNewMemberRequest, "New member request from user: " + requesterFromDb.getUsername());
+            messageService.sendMessageForRoomAdmins(messageFromRequest, targetRoomFromDb.getId());
+        });
     }
 
     @Transactional
     public void acceptAddUserRequest(final RoomAddOrRemoveUserRequestDto requestDto) {
-        Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(requestDto.getRoomId(), requestDto.getAdminId(), roomRepository);
-
-        Request newMemberRequestFromDb = requestRepository.findByRequestableAndRequesterIdAndType(targetRoomFromDb, requestDto.getUserId(), RequestType.NEW_MEMBER)
+        Room targetRoomFromDb = roomRepository.findById(requestDto.getRoomId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        if (newMemberRequestFromDb.getStatus().equals(RequestStatus.ACCEPTED)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Request already processed!");
-        }
+        Request newMemberRequestFromDb = findRequestAndCheckStatus(targetRoomFromDb, requestDto.getUserId());
 
         User requesterFromDb = userRepository.findById(requestDto.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -82,7 +79,7 @@ public class RoomRequestService implements RoomService {
         newMemberRequestFromDb.setStatus(RequestStatus.ACCEPTED);
         targetRoomFromDb.getUsersInRoom().add(requesterFromDb);
 
-        MessageEvent simpleMessageForRoom = messageCreator.createSimpleMessage(targetRoomFromDb, targetRoomFromDb, List.of(RecipientType.USER), "Room has gain new member: " + requesterFromDb.getUsername());
+        MessageEvent simpleMessageForRoom = messageCreator.createSimpleMessage(targetRoomFromDb, targetRoomFromDb, "Room has gain new member: " + requesterFromDb.getUsername());
         messageService.sendMessageForRoomUsers(simpleMessageForRoom, targetRoomFromDb.getId());
         MessageEvent simpleMessageForUser = messageCreator.createSimpleMessage(targetRoomFromDb, requesterFromDb, "Your request to become member of room: '" + targetRoomFromDb.getName() + "' has changed status to: ACCEPTED");
         messageService.sendMessageForPrivateUser(simpleMessageForUser, requesterFromDb.getId());
@@ -90,21 +87,17 @@ public class RoomRequestService implements RoomService {
 
     @Transactional
     public void rejectAddUserRequest(final RoomAddOrRemoveUserRequestDto requestDto) {
-        Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(requestDto.getRoomId(), requestDto.getAdminId(), roomRepository);
-
-        Request newMemberRequestFromDb = requestRepository.findByRequestableAndRequesterIdAndType(targetRoomFromDb, requestDto.getUserId(), RequestType.NEW_MEMBER)
+        Room targetRoomFromDb = roomRepository.findById(requestDto.getRoomId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        if (newMemberRequestFromDb.getStatus().equals(RequestStatus.REJECTED)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Request already processed!");
-        }
+        Request newMemberRequestFromDb = findRequestAndCheckStatus(targetRoomFromDb, requestDto.getUserId());
 
         User requesterFromDb = userRepository.findById(requestDto.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         newMemberRequestFromDb.setStatus(RequestStatus.REJECTED);
 
-        MessageEvent simpleMessageForRoom = messageCreator.createSimpleMessage(targetRoomFromDb, targetRoomFromDb, List.of(RecipientType.ADMIN), "Member request from user " + requesterFromDb.getUsername() + " has been rejected.");
+        MessageEvent simpleMessageForRoom = messageCreator.createSimpleMessage(targetRoomFromDb, targetRoomFromDb, "Member request from user " + requesterFromDb.getUsername() + " has been rejected.");
         messageService.sendMessageForRoomAdmins(simpleMessageForRoom, targetRoomFromDb.getId());
         MessageEvent simpleMessageForUser = messageCreator.createSimpleMessage(targetRoomFromDb, requesterFromDb, "Your request to become member of room: '" + targetRoomFromDb.getName() + "' has changed status to: REJECTED");
         messageService.sendMessageForPrivateUser(simpleMessageForUser, requesterFromDb.getId());
@@ -120,5 +113,15 @@ public class RoomRequestService implements RoomService {
                 .type(requestType)
                 .requestableType(targetRoom.getClass().getSimpleName())
                 .build();
+    }
+
+    private Request findRequestAndCheckStatus(final Requestable requestable, final Long requesterId) {
+        Request newMemberRequestFromDb = requestRepository.findByRequestableAndRequesterIdAndType(requestable, requesterId, RequestType.NEW_MEMBER)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        if (!newMemberRequestFromDb.getStatus().equals(RequestStatus.PENDING)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Request already processed!");
+        }
+        return newMemberRequestFromDb;
     }
 }
