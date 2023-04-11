@@ -44,11 +44,6 @@ public class Room extends RequestableEntity implements RoomRequestable, MessageP
     @JoinColumn(name = "field_location_id")
     private FieldLocation fieldLocation;
 
-    @ManyToMany(targetEntity = Player.class, cascade = CascadeType.MERGE)
-    @JoinTable(name = "room_player", joinColumns = @JoinColumn(name = "room_id", referencedColumnName = "id"),
-                                     inverseJoinColumns = @JoinColumn(name = "player_id", referencedColumnName = "id"))
-    private Set<Player> playersInRoom = new HashSet<>();
-
     @ManyToMany(targetEntity = User.class, cascade = CascadeType.MERGE)
     @JoinTable(name = "room_user", joinColumns = @JoinColumn(name = "room_id", referencedColumnName = "id"),
                                    inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"))
@@ -59,9 +54,10 @@ public class Room extends RequestableEntity implements RoomRequestable, MessageP
                                     inverseJoinColumns = @JoinColumn(name = "admin_id", referencedColumnName = "id"))
     private Set<User> adminsInRoom = new HashSet<>();
 
-    @ManyToMany(targetEntity = SkillTemplate.class, cascade = CascadeType.MERGE)
-    @JoinTable(name = "room_skill_template", joinColumns = @JoinColumn(name = "room_id", referencedColumnName = "id"),
-                                             inverseJoinColumns = @JoinColumn(name = "skill_template_id", referencedColumnName = "id"))
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
+    private Set<Player> playersInRoom = new HashSet<>();
+
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
     private Set<SkillTemplate> skillTemplatesForRoom = new HashSet<>();
 
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
