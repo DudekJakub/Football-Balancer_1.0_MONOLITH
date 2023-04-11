@@ -38,6 +38,11 @@ public class Player {
     @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
     Set<Skill> skills = new HashSet<>();
 
-    @ManyToMany(mappedBy = "playersInRoom")
-    private Set<Room> rooms = new HashSet<>();
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
+    @JoinColumn(name = "room_id", nullable = false)
+    private Room room;
+
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
+    @JoinColumn(name = "user_id")
+    private User user;
 }
