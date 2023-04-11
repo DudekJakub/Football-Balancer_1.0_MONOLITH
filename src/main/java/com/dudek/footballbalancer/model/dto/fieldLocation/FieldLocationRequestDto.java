@@ -1,7 +1,6 @@
 package com.dudek.footballbalancer.model.dto.fieldLocation;
 
 import lombok.*;
-import org.springframework.data.geo.Point;
 
 import javax.validation.constraints.Pattern;
 
@@ -23,5 +22,4 @@ public class FieldLocationRequestDto {
 
     @Pattern(regexp = "^\\d+$", message = "Number must be at least 1 digit")
     private int number;
-    private Point coordinates;
 }
