@@ -40,7 +40,7 @@ public class SkillTemplateService {
                 .name(requestDto.getName())
                 .active(requestDto.isActive())
                 .defaultSkill(requestDto.isDefaultSkill())
-                .rooms(Set.of(targetRoom))
+                .room(targetRoom)
                 .build();
 
         SkillTemplate savedNewSkillTemplate = skillTemplateRepository.save(newSkillTemplate);

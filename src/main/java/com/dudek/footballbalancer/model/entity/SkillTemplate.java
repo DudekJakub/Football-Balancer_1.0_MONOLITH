@@ -31,6 +31,7 @@ public class SkillTemplate {
     @OneToMany(mappedBy = "skillTemplate")
     private Set<Skill> skills = new HashSet<>();
 
-    @ManyToMany(mappedBy = "skillTemplatesForRoom")
-    private Set<Room> rooms = new HashSet<>();
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
+    @JoinColumn(name = "room_id", nullable = false)
+    private Room room;
 }
