@@ -1,10 +1,8 @@
 package com.dudek.footballbalancer.model.dto.player;
 
-import com.dudek.footballbalancer.model.SexStatus;
 import lombok.*;
 import org.springframework.lang.Nullable;
 
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 
@@ -14,16 +12,7 @@ import javax.validation.constraints.Positive;
 @AllArgsConstructor
 @ToString
 @Builder
-public class PlayerNewRequestDto {
-
-    @NotBlank
-    private String firstName;
-
-    @NotBlank
-    private String lastName;
-
-    @NotNull
-    private SexStatus sex;
+public class PlayerLinkRequestDto {
 
     @NotNull
     @Positive
@@ -33,7 +22,11 @@ public class PlayerNewRequestDto {
     @Positive
     private Long roomAdminId;
 
+    @NotNull
+    @Positive
+    private Long userId;
+
     @Nullable
     @Positive
-    private Long userToLinkId;
+    private Long playerId;
 }
