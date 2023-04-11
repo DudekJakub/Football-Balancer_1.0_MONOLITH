@@ -33,3 +33,7 @@ eureka:
       defaultZone: http://${eureka.instance.hostname}:8761/eureka/
 
 googleApiKey: AIzaSyBxj3q-F4tZMmiZhsiagyvTKXfFoazQwvE
+
+logging:
+  level:
+    com.dudek.footballbalancer: debug
