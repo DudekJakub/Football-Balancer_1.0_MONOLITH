@@ -13,6 +13,7 @@ import lombok.*;
 public class UserSimpleDto {
 
     private Long id;
+    private String username;
     private String firstName;
     private String lastName;
     private SexStatus sex;

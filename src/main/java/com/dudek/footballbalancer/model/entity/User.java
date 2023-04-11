@@ -53,6 +53,9 @@ public class User implements MessageParticipant {
     @ManyToMany(mappedBy = "usersInRoom")
     private Set<Room> roomsAsStandardUser = new HashSet<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private Set<Player> linkedPlayers = new HashSet<>();
+
     @Override
     public String getParticipantName() {
         return this.username;

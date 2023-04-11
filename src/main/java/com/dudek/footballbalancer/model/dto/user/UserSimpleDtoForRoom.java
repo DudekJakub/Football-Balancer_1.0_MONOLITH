@@ -2,6 +2,8 @@ package com.dudek.footballbalancer.model.dto.user;
 
 import com.dudek.footballbalancer.model.Role;
 import com.dudek.footballbalancer.model.SexStatus;
+import com.dudek.footballbalancer.model.dto.player.PlayerSimpleDto;
+import com.dudek.footballbalancer.model.entity.Player;
 import lombok.*;
 
 @Getter
@@ -10,13 +12,14 @@ import lombok.*;
 @AllArgsConstructor
 @ToString
 @Builder
-public class UserDto {
+public class UserSimpleDtoForRoom {
 
     private Long id;
     private String username;
-    private String email;
     private String firstName;
     private String lastName;
     private SexStatus sex;
-    private Role userRole;
+    private Role role;
+    private String email;
+    private PlayerSimpleDto linkedRoomPlayer;
 }
