@@ -1,7 +1,7 @@
 package com.dudek.footballbalancer.model.dto.room;
 
 import com.dudek.footballbalancer.model.dto.fieldLocation.FieldLocationSimpleDto;
-import com.dudek.footballbalancer.model.dto.user.UserSimpleDto;
+import com.dudek.footballbalancer.model.dto.user.UserSimpleDtoForRoom;
 import lombok.*;
 
 import java.util.List;
@@ -19,6 +19,6 @@ public class RoomNewResponseDto {
     private boolean isPublic;
     private String description;
     private FieldLocationSimpleDto location;
-    private List<UserSimpleDto> admins;
-    private List<UserSimpleDto> users;
+    private List<UserSimpleDtoForRoom> admins;
+    private List<UserSimpleDtoForRoom> users;
 }

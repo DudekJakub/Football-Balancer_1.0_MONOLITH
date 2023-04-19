@@ -16,7 +16,7 @@ public class RoomAddOrRemoveUserRequestDto {
     private Long userId;
 
     @NotNull
-    private Long adminId;
+    private Long roomAdminId;
 
     @NotNull
     private Long roomId;

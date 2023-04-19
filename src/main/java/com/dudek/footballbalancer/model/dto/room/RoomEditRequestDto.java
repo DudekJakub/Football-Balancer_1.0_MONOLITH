@@ -5,18 +5,19 @@ import lombok.*;
 import org.springframework.lang.Nullable;
 
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
 @Builder
 public class RoomEditRequestDto {
 
     @NotNull
-    private Long userRequestSenderId;
+    @Positive
+    private Long roomAdminId;
 
     @Size(min = 3, max = 30)
     private String name;

@@ -2,11 +2,10 @@ package com.dudek.footballbalancer.model.dto.room;
 
 import com.dudek.footballbalancer.model.dto.fieldLocation.FieldLocationSimpleDto;
 import com.dudek.footballbalancer.model.dto.player.PlayerSimpleDto;
-import com.dudek.footballbalancer.model.dto.user.UserSimpleDto;
+import com.dudek.footballbalancer.model.dto.user.UserSimpleDtoForRoom;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -27,6 +26,6 @@ public class RoomEnteredResponseDto {
     private LocalDateTime nextMatchRegistrationStartDate;
     private LocalDateTime nextMatchRegistrationEndDate;
     private List<PlayerSimpleDto> players;
-    private List<UserSimpleDto> users;
-    private List<UserSimpleDto> admins;
+    private List<UserSimpleDtoForRoom> users;
+    private List<UserSimpleDtoForRoom> admins;
 }
