@@ -13,7 +13,6 @@ import com.dudek.footballbalancer.service.geocoding.GeocodingService;
 import com.dudek.footballbalancer.validation.DateValidator;
 import com.google.maps.model.LatLng;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -29,7 +28,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class RoomBasicManagementService implements RoomService {
+public class RoomBasicManagementService {
 
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
@@ -63,13 +62,13 @@ public class RoomBasicManagementService implements RoomService {
         return roomMapper.roomCollectionToRoomSimpleDtoList(paginated, userId);
     }
 
-    public List<RoomSimpleDto> findRoomByNameOrLocation(String roomNameOrLocation) {
+    public List<RoomSimpleDto> findRoomByNameOrLocation(final String roomNameOrLocation, final Long userId) {
         List<Room> foundRooms = roomRepository.findByNameContainsIgnoreCaseOrFieldLocation_CityContainsIgnoreCaseOrFieldLocation_StreetContainsIgnoreCase(roomNameOrLocation, roomNameOrLocation, roomNameOrLocation)
                 .stream()
                 .filter(Room::isPublic)
                 .collect(Collectors.toList());
 
-        return roomMapper.roomCollectionToRoomSimpleDtoList(foundRooms, null);
+        return roomMapper.roomCollectionToRoomSimpleDtoList(foundRooms, userId);
     }
 
     public RoomEnteredResponseDto enterRoom(final RoomEnterRequestDto requestDto) {
@@ -125,8 +124,8 @@ public class RoomBasicManagementService implements RoomService {
     }
 
     @Transactional
-    public void updateRoom(final Long roomId, final RoomEditRequestDto requestDto) {
-        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(roomId, requestDto.getUserRequestSenderId(), roomRepository);
+    public RoomEditResponseDto updateRoom(final Long roomId, final RoomEditRequestDto requestDto) {
+        final Room targetRoomFromDb = roomRepository.findById(roomId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         targetRoomFromDb.setName(requestDto.getName());
         targetRoomFromDb.setDescription(requestDto.getDescription());
@@ -138,12 +137,14 @@ public class RoomBasicManagementService implements RoomService {
             roomLocation.setLatitude(latLngFromRoomLocation.lat);
             roomLocation.setLongitude(latLngFromRoomLocation.lng);
             targetRoomFromDb.setFieldLocation(roomLocation);
+            return new RoomEditResponseDto(targetRoomFromDb, roomLocation);
         }
+        return new RoomEditResponseDto(targetRoomFromDb);
     }
 
     @Transactional
-    public void updateNextMatchDates(Long roomId, Long adminId, RoomNewDatesRequestDto requestDto) {
-        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(roomId, adminId, roomRepository);
+    public void updateNextMatchDates(Long roomId, RoomNewDatesRequestDto requestDto) {
+        final Room targetRoomFromDb = roomRepository.findById(roomId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         LocalDateTime nextMatchLocalDateTime = parseDateString(requestDto.getNextMatchDate());
         LocalDateTime nextMatchRegistrationStartDate = parseDateString(requestDto.getNextMatchRegistrationStartDate());
         LocalDateTime nextMatchRegistrationEndDate = parseDateString(requestDto.getNextMatchRegistrationEndDate());

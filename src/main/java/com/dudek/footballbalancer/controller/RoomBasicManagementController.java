@@ -2,6 +2,7 @@ package com.dudek.footballbalancer.controller;
 
 import com.dudek.footballbalancer.model.dto.room.*;
 import com.dudek.footballbalancer.service.room.RoomBasicManagementService;
+import com.dudek.footballbalancer.validation.customAnnotation.RequiresRoomAdmin;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,8 +50,8 @@ public class RoomBasicManagementController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<RoomSimpleDto>> findRoomByNameOrLocation(@RequestParam(name = "searchItem") String roomNameOrLocation) {
-        return ResponseEntity.ok(roomBasicManagementService.findRoomByNameOrLocation(roomNameOrLocation));
+    public ResponseEntity<List<RoomSimpleDto>> findRoomByNameOrLocation(@RequestParam("searchItem") String roomNameOrLocation, @RequestParam("userId") Long userId) {
+        return ResponseEntity.ok(roomBasicManagementService.findRoomByNameOrLocation(roomNameOrLocation, userId));
     }
 
     @PostMapping("/enter")
@@ -66,15 +67,16 @@ public class RoomBasicManagementController {
 
     @PutMapping("/{roomId}")
     @SecurityRequirement(name = "JWT")
-    public ResponseEntity<Void> updateRoom(@PathVariable Long roomId, @RequestBody RoomEditRequestDto requestDto) {
-        roomBasicManagementService.updateRoom(roomId, requestDto);
-        return ResponseEntity.noContent().build();
+    @RequiresRoomAdmin
+    public ResponseEntity<RoomEditResponseDto> updateRoom(@PathVariable Long roomId, @RequestBody RoomEditRequestDto requestDto) {
+        return ResponseEntity.ok(roomBasicManagementService.updateRoom(roomId, requestDto));
     }
 
     @PatchMapping("/next-match-all-dates/{roomId}")
     @SecurityRequirement(name = "JWT")
-    public ResponseEntity<Void> updateNextMatchDates(@PathVariable Long roomId, @RequestParam(value = "adminId") Long adminId, @RequestBody RoomNewDatesRequestDto requestDto) {
-        roomBasicManagementService.updateNextMatchDates(roomId, adminId, requestDto);
+    @RequiresRoomAdmin
+    public ResponseEntity<Void> updateNextMatchDates(@PathVariable Long roomId, @RequestBody RoomNewDatesRequestDto requestDto) {
+        roomBasicManagementService.updateNextMatchDates(roomId, requestDto);
         return ResponseEntity.noContent().build();
     }
 }

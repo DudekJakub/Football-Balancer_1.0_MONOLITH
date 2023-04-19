@@ -15,7 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import javax.transaction.Transactional;
 
 @Service
-public class RoomUserManagementService implements RoomService {
+public class RoomUserManagementService {
 
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
@@ -30,7 +30,8 @@ public class RoomUserManagementService implements RoomService {
 
     @Transactional
     public RoomNewUserResponseDto addUserToRoom(final RoomAddOrRemoveUserRequestDto requestDto) {
-        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(requestDto.getRoomId(), requestDto.getAdminId(), roomRepository);
+        final Room targetRoomFromDb = roomRepository.findById(requestDto.getRoomId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         User userToAddFromDb = userRepository.findById(requestDto.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -42,7 +43,8 @@ public class RoomUserManagementService implements RoomService {
 
     @Transactional
     public Long removeUserFromRoom(final RoomAddOrRemoveUserRequestDto requestDto) {
-        final Room targetRoomFromDb = obtainRoomFromDbAndCheckAdminPermission(requestDto.getRoomId(), requestDto.getAdminId(), roomRepository);
+        final Room targetRoomFromDb = roomRepository.findById(requestDto.getRoomId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         User userToRemoveFromDb = userRepository.findById(requestDto.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
