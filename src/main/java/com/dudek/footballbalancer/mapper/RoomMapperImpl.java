@@ -7,11 +7,8 @@ import com.dudek.footballbalancer.model.dto.room.RoomSimpleDto;
 import com.dudek.footballbalancer.model.entity.Room;
 import com.dudek.footballbalancer.model.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
-import java.sql.Date;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -22,13 +19,11 @@ import java.util.stream.Collectors;
 public class RoomMapperImpl implements RoomMapper {
 
     private final FieldLocationMapper fieldLocationMapper;
-    private final PlayerMapper playerMapper;
     private final UserMapper userMapper;
 
     @Autowired
-    public RoomMapperImpl(final FieldLocationMapper fieldLocationMapper, final PlayerMapper playerMapper, final UserMapper userMapper) {
+    public RoomMapperImpl(final FieldLocationMapper fieldLocationMapper, final UserMapper userMapper) {
         this.fieldLocationMapper = fieldLocationMapper;
-        this.playerMapper = playerMapper;
         this.userMapper = userMapper;
     }
 
@@ -44,9 +39,8 @@ public class RoomMapperImpl implements RoomMapper {
                 .nextMatchDate(room.getNextMatchDate())
                 .nextMatchRegistrationStartDate(room.getNextMatchRegistrationStartDate())
                 .nextMatchRegistrationEndDate(room.getNextMatchRegistrationEndDate())
-                .players(playerMapper.playerCollectionToSimpleDtoList(room.getPlayersInRoom()))
-                .users(userMapper.userCollectionToSimpleDtoList(room.getUsersInRoom()))
-                .admins(userMapper.userCollectionToSimpleDtoList(room.getAdminsInRoom()))
+                .users(userMapper.userCollectionToSimpleDtoForRoomList(room.getUsersInRoom(), room))
+                .admins(userMapper.userCollectionToSimpleDtoForRoomList(room.getAdminsInRoom(), room))
                 .build();
     }
 
@@ -57,8 +51,8 @@ public class RoomMapperImpl implements RoomMapper {
                 .name(room.getName())
                 .isPublic(room.isPublic())
                 .description(room.getDescription())
-                .admins(userMapper.userCollectionToSimpleDtoList(room.getAdminsInRoom()))
-                .users(userMapper.userCollectionToSimpleDtoList(room.getUsersInRoom()))
+                .admins(userMapper.userCollectionToSimpleDtoForRoomList(room.getAdminsInRoom(), room))
+                .users(userMapper.userCollectionToSimpleDtoForRoomList(room.getUsersInRoom(), room))
                 .location(fieldLocationMapper.fieldLocationToSimpleDto(room.getFieldLocation()))
                 .build();
     }
@@ -68,7 +62,7 @@ public class RoomMapperImpl implements RoomMapper {
         return RoomNewUserResponseDto.builder()
                 .id(room.getId())
                 .name(room.getName())
-                .newUser(userMapper.userToSimpleDto(newUser))
+                .newUser(userMapper.userToSimpleDtoForRoom(newUser, room))
                 .build();
     }
 
