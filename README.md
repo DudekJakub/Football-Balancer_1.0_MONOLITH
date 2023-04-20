@@ -81,20 +81,22 @@ Front-end can be start via following command:
 | TECHNOLOGY | STATUS |
 | ---------------| :---------------:|
 | Java 11v. | implemented |
+| Gradle (build-tool) | implemented |
 | MySQL | implemented |
 | MongoDB | implemented |
 | MongoDB reactive | implemented |
 | RabbitMQ | implemented |
 | Webflux (reactive-programming) | implemented |
 | Websockets | implemented |
+| Spring Boot | implemented |
 | Spring Security | implemented |
 | Spring Data | implemented |
 | Spring Validation | implemented |
 | Microservices | implemented |
+| AOP (aspect-oriented-programming) | implemented |
 | JWToken | implemented |
 | Hibernate | implemented |
 | Docker | implemented |
-| SpringBoot | implemented |
 | Eureka-discovery-system | implemented |
 | Slf4J (logging) | implemented |
 | Google-Maps | implemented |
