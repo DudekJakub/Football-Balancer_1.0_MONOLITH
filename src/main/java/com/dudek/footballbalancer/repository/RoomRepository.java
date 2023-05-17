@@ -27,11 +27,12 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     Optional<Room> findByIdFetchSkillTemplates(@NonNull Long id);
 
     @Query("SELECT r FROM Room r " +
+            "LEFT JOIN FETCH r.fieldLocation " +
             "LEFT JOIN FETCH r.playersInRoom " +
             "LEFT JOIN FETCH r.usersInRoom " +
             "LEFT JOIN FETCH r.adminsInRoom " +
             "WHERE r.id = :id")
-    Optional<Room> findByIdFetchPlayersUsersAdmins(@Param("id") Long id);
+    Optional<Room> findByIdFetchLocationAndPlayersUsersAdmins(@Param("id") Long id);
 
     @Query(value = "SELECT r FROM Room r " +
                     "LEFT JOIN FETCH r.usersInRoom " +
@@ -47,7 +48,13 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
            countQuery = "SELECT COUNT(r) FROM Room r LEFT JOIN r.usersInRoom user LEFT JOIN r.fieldLocation")
     Page<Room> findPaginatedFetchUsersInRoomAndLocationByUserId(Pageable pageable, @Param("userId") Long userId);
 
-    List<Room> findByNameContainsIgnoreCaseOrFieldLocation_CityContainsIgnoreCaseOrFieldLocation_StreetContainsIgnoreCase(@NotBlank @Size(min = 3, max = 30) String name, String fieldLocation_city, String fieldLocation_street);
+    @Query(value = "SELECT r FROM Room r " +
+                     "LEFT JOIN FETCH r.usersInRoom u " +
+                     "LEFT JOIN FETCH r.fieldLocation fL " +
+                     "WHERE LOWER(r.name) = LOWER(:name) " +
+                     "OR LOWER(fL.city) = LOWER(:fieldLocation_city) " +
+                     "OR LOWER(fL.street) = LOWER(:fieldLocation_street)")
+    List<Room> findByNameOrFieldLocationCityOrFieldLocationStreet(@NotBlank @Size(min = 3, max = 30) String name, String fieldLocation_city, String fieldLocation_street);
 
     @Query(value = "SELECT COUNT(r) > 0 FROM Room r " +
                     "JOIN r.usersInRoom u WHERE r.id = :roomId AND u.id = :userId")
