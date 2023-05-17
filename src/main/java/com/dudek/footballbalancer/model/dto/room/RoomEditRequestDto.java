@@ -1,6 +1,7 @@
 package com.dudek.footballbalancer.model.dto.room;
 
 import com.dudek.footballbalancer.model.dto.fieldLocation.FieldLocationRequestDto;
+import com.dudek.footballbalancer.validation.customAnnotation.RoomAdminId;
 import lombok.*;
 import org.springframework.lang.Nullable;
 
@@ -17,6 +18,7 @@ public class RoomEditRequestDto {
 
     @NotNull
     @Positive
+    @RoomAdminId
     private Long roomAdminId;
 
     @Size(min = 3, max = 30)

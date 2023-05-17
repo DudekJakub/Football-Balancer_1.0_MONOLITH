@@ -1,11 +1,11 @@
 package com.dudek.footballbalancer.model.dto.room;
 
+import com.dudek.footballbalancer.validation.customAnnotation.RoomAdminId;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
-import java.util.TimeZone;
 
 @Getter
 @Setter
@@ -26,5 +26,6 @@ public class RoomNewDatesRequestDto {
 
     @NotNull
     @Positive
+    @RoomAdminId
     private Long roomAdminId;
 }

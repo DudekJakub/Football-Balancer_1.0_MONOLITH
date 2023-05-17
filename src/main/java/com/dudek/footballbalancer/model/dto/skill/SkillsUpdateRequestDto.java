@@ -1,5 +1,7 @@
 package com.dudek.footballbalancer.model.dto.skill;
 
+import com.dudek.footballbalancer.validation.customAnnotation.RoomAdminId;
+import com.dudek.footballbalancer.validation.customAnnotation.RoomId;
 import lombok.*;
 
 import javax.validation.constraints.NotNull;
@@ -16,10 +18,12 @@ public class SkillsUpdateRequestDto {
 
     @NotNull
     @Positive
+    @RoomId
     private Long roomId;
 
     @NotNull
     @Positive
+    @RoomAdminId
     private Long roomAdminId;
 
     @NotNull
