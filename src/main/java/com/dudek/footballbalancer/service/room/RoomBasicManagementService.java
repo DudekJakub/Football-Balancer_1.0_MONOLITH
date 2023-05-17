@@ -3,6 +3,7 @@ package com.dudek.footballbalancer.service.room;
 import com.dudek.footballbalancer.config.security.PasswordEncryptor;
 import com.dudek.footballbalancer.mapper.FieldLocationMapper;
 import com.dudek.footballbalancer.mapper.RoomMapper;
+import com.dudek.footballbalancer.model.dto.fieldLocation.FieldLocationRequestDto;
 import com.dudek.footballbalancer.model.dto.room.*;
 import com.dudek.footballbalancer.model.entity.FieldLocation;
 import com.dudek.footballbalancer.model.entity.Room;
@@ -10,6 +11,7 @@ import com.dudek.footballbalancer.model.entity.User;
 import com.dudek.footballbalancer.repository.RoomRepository;
 import com.dudek.footballbalancer.repository.UserRepository;
 import com.dudek.footballbalancer.service.geocoding.GeocodingService;
+import com.dudek.footballbalancer.service.util.DateFormatterUtil;
 import com.dudek.footballbalancer.validation.DateValidator;
 import com.google.maps.model.LatLng;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +24,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import javax.transaction.Transactional;
 import java.time.*;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,7 +48,7 @@ public class RoomBasicManagementService {
         this.geocodingService = geocodingService;
     }
 
-    public List<RoomSimpleDto> findPaginated(int pageNumber, int pageSize, Sort.Direction sortDirection, String sortField, boolean fetchPublic, Long userId) {
+    public List<RoomSimpleDto> findPaginatedWithoutUserOwned(int pageNumber, int pageSize, Sort.Direction sortDirection, String sortField, boolean fetchPublic, Long userId) {
         Sort sortBy = sortDirection.equals(Sort.Direction.ASC) ? Sort.by(sortField).ascending() : Sort.by(sortField).descending();
         Pageable pageable = PageRequest.of(pageNumber, pageSize, sortBy);
         List<Room> paginated = roomRepository.findPaginatedFetchUsersInRoomAndLocation(pageable, fetchPublic, userId).toList();
@@ -63,7 +63,7 @@ public class RoomBasicManagementService {
     }
 
     public List<RoomSimpleDto> findRoomByNameOrLocation(final String roomNameOrLocation, final Long userId) {
-        List<Room> foundRooms = roomRepository.findByNameContainsIgnoreCaseOrFieldLocation_CityContainsIgnoreCaseOrFieldLocation_StreetContainsIgnoreCase(roomNameOrLocation, roomNameOrLocation, roomNameOrLocation)
+        List<Room> foundRooms = roomRepository.findByNameOrFieldLocationCityOrFieldLocationStreet(roomNameOrLocation, roomNameOrLocation, roomNameOrLocation)
                 .stream()
                 .filter(Room::isPublic)
                 .collect(Collectors.toList());
@@ -72,7 +72,7 @@ public class RoomBasicManagementService {
     }
 
     public RoomEnteredResponseDto enterRoom(final RoomEnterRequestDto requestDto) {
-        final Room targetRoomFromDb = roomRepository.findByIdFetchPlayersUsersAdmins(requestDto.getRoomId())
+        final Room targetRoomFromDb = roomRepository.findByIdFetchLocationAndPlayersUsersAdmins(requestDto.getRoomId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         boolean isUserAlreadyInRoom = targetRoomFromDb.getUsersInRoom().stream()
@@ -103,13 +103,11 @@ public class RoomBasicManagementService {
                 .isPublic(requestDto.isPublic())
                 .adminsInRoom(Set.of(requestSender))
                 .usersInRoom(Set.of(requestSender))
+                .playersInRoom(Set.of())
                 .build();
 
         if (requestDto.getLocation() != null) {
-            FieldLocation roomLocation = fieldLocationMapper.requestDtoToFieldLocation(requestDto.getLocation());
-            LatLng latLngFromRoomLocation = getLatLngFromRoomLocation(roomLocation);
-            roomLocation.setLatitude(latLngFromRoomLocation.lat);
-            roomLocation.setLongitude(latLngFromRoomLocation.lng);
+            FieldLocation roomLocation = prepareFieldLocationFromRequest(requestDto.getLocation());
             newRoom.setFieldLocation(roomLocation);
         } else {
             newRoom.setFieldLocation(FieldLocation.builder()
@@ -132,10 +130,7 @@ public class RoomBasicManagementService {
         targetRoomFromDb.setPublic(requestDto.isPublic());
 
         if (requestDto.getLocation() != null) {
-            FieldLocation roomLocation = fieldLocationMapper.requestDtoToFieldLocation(requestDto.getLocation());
-            LatLng latLngFromRoomLocation = getLatLngFromRoomLocation(roomLocation);
-            roomLocation.setLatitude(latLngFromRoomLocation.lat);
-            roomLocation.setLongitude(latLngFromRoomLocation.lng);
+            FieldLocation roomLocation = prepareFieldLocationFromRequest(requestDto.getLocation());
             targetRoomFromDb.setFieldLocation(roomLocation);
             return new RoomEditResponseDto(targetRoomFromDb, roomLocation);
         }
@@ -145,9 +140,9 @@ public class RoomBasicManagementService {
     @Transactional
     public void updateNextMatchDates(Long roomId, RoomNewDatesRequestDto requestDto) {
         final Room targetRoomFromDb = roomRepository.findById(roomId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        LocalDateTime nextMatchLocalDateTime = parseDateString(requestDto.getNextMatchDate());
-        LocalDateTime nextMatchRegistrationStartDate = parseDateString(requestDto.getNextMatchRegistrationStartDate());
-        LocalDateTime nextMatchRegistrationEndDate = parseDateString(requestDto.getNextMatchRegistrationEndDate());
+        LocalDateTime nextMatchLocalDateTime = DateFormatterUtil.parseDateString(requestDto.getNextMatchDate());
+        LocalDateTime nextMatchRegistrationStartDate = DateFormatterUtil.parseDateString(requestDto.getNextMatchRegistrationStartDate());
+        LocalDateTime nextMatchRegistrationEndDate = DateFormatterUtil.parseDateString(requestDto.getNextMatchRegistrationEndDate());
 
         boolean allDatesNotNullAndInOrder = DateValidator.allDatesNotNullAndInOrder(nextMatchRegistrationStartDate, nextMatchRegistrationEndDate, nextMatchLocalDateTime);
 
@@ -160,25 +155,17 @@ public class RoomBasicManagementService {
         }
     }
 
-    private LocalDateTime parseDateString(final String dateString) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.GERMANY);
-
+    FieldLocation prepareFieldLocationFromRequest(final FieldLocationRequestDto requestDto) {
+        FieldLocation roomLocation = fieldLocationMapper.requestDtoToFieldLocation(requestDto);
+        String address = roomLocation.getStreet() + " " + roomLocation.getNumber() + ", " + roomLocation.getCity() + ", Poland";
+        LatLng latLngFromRoomLocation;
         try {
-            OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateString, formatter);
-            return offsetDateTime.toLocalDateTime();
-        } catch (DateTimeParseException e) {
-            System.out.println(e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    private LatLng getLatLngFromRoomLocation(final FieldLocation fieldLocation) {
-        String address = fieldLocation.getStreet() + " " + fieldLocation.getNumber() + ", " + fieldLocation.getCity() + ", Poland";
-        try {
-            return geocodingService.getLatLng(address);
+            latLngFromRoomLocation = geocodingService.getLatLng(address);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
-            return new LatLng(0,0);
+            latLngFromRoomLocation = new LatLng(0,0);
         }
+        roomLocation.setLatitude(latLngFromRoomLocation.lat);
+        roomLocation.setLongitude(latLngFromRoomLocation.lng);
+        return roomLocation;
     }
 }
