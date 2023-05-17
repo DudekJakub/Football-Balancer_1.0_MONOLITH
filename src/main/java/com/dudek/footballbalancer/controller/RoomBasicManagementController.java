@@ -3,12 +3,11 @@ package com.dudek.footballbalancer.controller;
 import com.dudek.footballbalancer.model.dto.room.*;
 import com.dudek.footballbalancer.service.room.RoomBasicManagementService;
 import com.dudek.footballbalancer.validation.customAnnotation.RequiresRoomAdmin;
+import com.dudek.footballbalancer.validation.customAnnotation.RoomId;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +26,7 @@ public class RoomBasicManagementController {
     }
 
     @GetMapping("/paginated")
-    public ResponseEntity<List<RoomSimpleDto>> findPaginated(
+    public ResponseEntity<List<RoomSimpleDto>> findPaginatedWithoutUserOwned(
             @RequestParam(value = "pageNo", defaultValue = "0") int pageNumber,
             @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
             @RequestParam(value = "sortField", defaultValue = "id") String sortField,
@@ -35,7 +34,7 @@ public class RoomBasicManagementController {
             @RequestParam(value = "fetchPublic", defaultValue = "true") boolean fetchPublic,
             @RequestParam(value = "userId", defaultValue = "0") long userId
     ) {
-        return ResponseEntity.ok(roomBasicManagementService.findPaginated(pageNumber, pageSize, sortDirection, sortField, fetchPublic, userId));
+        return ResponseEntity.ok(roomBasicManagementService.findPaginatedWithoutUserOwned(pageNumber, pageSize, sortDirection, sortField, fetchPublic, userId));
     }
 
     @GetMapping("/paginated/{userId}")
@@ -68,14 +67,14 @@ public class RoomBasicManagementController {
     @PutMapping("/{roomId}")
     @SecurityRequirement(name = "JWT")
     @RequiresRoomAdmin
-    public ResponseEntity<RoomEditResponseDto> updateRoom(@PathVariable Long roomId, @RequestBody RoomEditRequestDto requestDto) {
+    public ResponseEntity<RoomEditResponseDto> updateRoom(@PathVariable @RoomId Long roomId, @RequestBody RoomEditRequestDto requestDto) {
         return ResponseEntity.ok(roomBasicManagementService.updateRoom(roomId, requestDto));
     }
 
     @PatchMapping("/next-match-all-dates/{roomId}")
     @SecurityRequirement(name = "JWT")
     @RequiresRoomAdmin
-    public ResponseEntity<Void> updateNextMatchDates(@PathVariable Long roomId, @RequestBody RoomNewDatesRequestDto requestDto) {
+    public ResponseEntity<Void> updateNextMatchDates(@PathVariable @RoomId Long roomId, @RequestBody RoomNewDatesRequestDto requestDto) {
         roomBasicManagementService.updateNextMatchDates(roomId, requestDto);
         return ResponseEntity.noContent().build();
     }
