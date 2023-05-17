@@ -2,6 +2,8 @@ package com.dudek.footballbalancer.aspect;
 
 import com.dudek.footballbalancer.repository.RoomRepository;
 import com.dudek.footballbalancer.validation.customAnnotation.RequiresRoomAdmin;
+import com.dudek.footballbalancer.validation.customAnnotation.RoomAdminId;
+import com.dudek.footballbalancer.validation.customAnnotation.RoomId;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -12,8 +14,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -27,44 +31,63 @@ public class RoomAdminAspect {
         this.roomRepository = roomRepository;
     }
 
-    //ZAMIAST SZUKAC PO NAZWIE POLA -> STWORZYC ADNOTACJE I SZUKAC POLA OKRASZONEGO TA ADNOTACJA
-
     @Around("@annotation(requiresRoomAdmin) && args(*,  @org.springframework.web.bind.annotation.RequestBody requestDto, ..)")
     public Object checkRoomAdmin(ProceedingJoinPoint joinPoint, RequiresRoomAdmin requiresRoomAdmin, Object requestDto) throws Throwable {
         long roomId = 0;
         long roomAdminId = 0;
 
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
-        String[] paramNames = methodSignature.getParameterNames();
         Object[] args = joinPoint.getArgs();
+        Annotation[][] paramAnnotations = methodSignature.getMethod().getParameterAnnotations();
 
-        for (int i = 0; i < paramNames.length; i++) {
-            if ("roomId".equals(paramNames[i]) && args[i] instanceof Long) {
-                roomId = (Long) args[i];
-                logger.debug("Room ID found as pathVariable or param - [{}]", roomId);
-            } else if ("roomAdminId".equals(paramNames[i]) && args[i] instanceof Long) {
-                roomAdminId = (Long) args[i];
-                logger.debug("RoomAdmin ID found as pathVariable or param - [{}]", roomAdminId);
+        int argIndex = -1;
+
+        for (int i = 0; i < paramAnnotations.length; i++) {
+            for (Annotation annotation : paramAnnotations[i]) {
+                if (annotation.annotationType() == RoomAdminId.class) {
+                    argIndex = i;
+                    roomAdminId = (Long) args[argIndex];
+                    logger.debug("RoomAdmin ID found as pathVariable or param - [{}]", roomAdminId);
+                } else if (annotation.annotationType() == RoomId.class) {
+                    argIndex = i;
+                    roomId = (Long) args[argIndex];
+                    logger.debug("Room ID found as pathVariable or param - [{}]", roomId);
+                }
             }
         }
 
         if (roomId == 0 && requestDto != null) {
-                List<String> fieldNames = Stream.of(requestDto.getClass().getDeclaredFields()).map(Field::getName).collect(Collectors.toList());
-                if (!fieldNames.contains("roomId")) {
-                    Field roomIdField = requestDto.getClass().getDeclaredField("roomId");
-                    roomIdField.setAccessible(true);
-                    roomId = (Long) roomIdField.get(requestDto);
-                    logger.debug("Room ID found in requestBody - [{}]", roomId);
+            List<Field> targetFields = Stream.of(requestDto.getClass().getDeclaredFields())
+                    .filter(field -> field.isAnnotationPresent(RoomId.class))
+                    .collect(Collectors.toList());
+            AtomicLong id = new AtomicLong();
+            targetFields.stream().findFirst().ifPresent(field -> {
+                field.setAccessible(true);
+                try {
+                    id.set((Long) field.get(requestDto));
+                    logger.debug("Room ID found in requestBody - [{}]", id);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
                 }
+            });
+            roomId = id.get();
+        }
 
-        } else if (roomAdminId == 0 && requestDto != null) {
-                List<String> fieldNames = Stream.of(requestDto.getClass().getDeclaredFields()).map(Field::getName).collect(Collectors.toList());
-                if (fieldNames.contains("roomAdminId")) {
-                    Field roomAdminIdField = requestDto.getClass().getDeclaredField("roomAdminId");
-                    roomAdminIdField.setAccessible(true);
-                    roomAdminId = (Long) roomAdminIdField.get(requestDto);
-                    logger.debug("RoomAdmin ID found in requestBody - [{}]", roomAdminId);
+        if (roomAdminId == 0 && requestDto != null) {
+            List<Field> targetFields = Stream.of(requestDto.getClass().getDeclaredFields())
+                    .filter(field -> field.isAnnotationPresent(RoomAdminId.class))
+                    .collect(Collectors.toList());
+            AtomicLong id = new AtomicLong();
+            targetFields.stream().findFirst().ifPresent(field -> {
+                field.setAccessible(true);
+                try {
+                    id.set((Long) field.get(requestDto));
+                    logger.debug("RoomAdmin ID found in requestBody - [{}]", id);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
                 }
+            });
+            roomAdminId = id.get();
         }
 
         if (roomRepository.isAdminOfRoom(roomAdminId, roomId)) {
