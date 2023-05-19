@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class FieldLocationMapperImplTest {
+class FieldLocationMapperImplTests {
 
     private final FieldLocationMapperImpl mapper = new FieldLocationMapperImpl();
 
