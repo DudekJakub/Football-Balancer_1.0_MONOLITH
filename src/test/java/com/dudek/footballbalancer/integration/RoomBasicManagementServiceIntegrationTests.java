@@ -1,8 +1,6 @@
 package com.dudek.footballbalancer.integration;
 
 import com.dudek.footballbalancer.config.security.PasswordEncryptor;
-import com.dudek.footballbalancer.mapper.FieldLocationMapper;
-import com.dudek.footballbalancer.mapper.RoomMapper;
 import com.dudek.footballbalancer.model.Role;
 import com.dudek.footballbalancer.model.SexStatus;
 import com.dudek.footballbalancer.model.dto.fieldLocation.FieldLocationRequestDto;
@@ -13,7 +11,6 @@ import com.dudek.footballbalancer.model.entity.Room;
 import com.dudek.footballbalancer.model.entity.User;
 import com.dudek.footballbalancer.repository.RoomRepository;
 import com.dudek.footballbalancer.repository.UserRepository;
-import com.dudek.footballbalancer.service.geocoding.GeocodingService;
 import com.dudek.footballbalancer.service.room.RoomBasicManagementService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +20,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -40,25 +36,13 @@ import static org.junit.jupiter.api.Assertions.*;
 public class RoomBasicManagementServiceIntegrationTests {
 
     @Autowired
-    private EntityManager entityManager;
-
-    @Autowired
     private RoomRepository roomRepository;
 
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
-    private RoomMapper roomMapper;
-
-    @Autowired
-    private FieldLocationMapper fieldLocationMapper;
-
-    @Autowired
     private PasswordEncryptor passwordEncryptor;
-
-    @Autowired
-    private GeocodingService geocodingService;
 
     @Autowired
     private RoomBasicManagementService roomService;
