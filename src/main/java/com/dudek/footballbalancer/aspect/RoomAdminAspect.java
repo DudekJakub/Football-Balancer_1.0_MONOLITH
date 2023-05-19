@@ -90,7 +90,9 @@ public class RoomAdminAspect {
             roomAdminId = id.get();
         }
 
-        if (roomRepository.isAdminOfRoom(roomAdminId, roomId)) {
+        if (roomId == 0 || roomAdminId == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        } else if (roomRepository.isAdminOfRoom(roomAdminId, roomId)) {
             return joinPoint.proceed();
         } else {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
