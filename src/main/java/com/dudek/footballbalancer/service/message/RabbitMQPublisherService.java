@@ -65,7 +65,7 @@ public class RabbitMQPublisherService implements MessageService {
         }
     }
 
-    private String mapMessageEvent(final MessageEvent messageEvent) {
+    String mapMessageEvent(final MessageEvent messageEvent) {
         String message;
         try {
             message = objectMapper.writeValueAsString(messageEvent);
