@@ -23,11 +23,11 @@ import java.util.stream.Stream;
 
 @Aspect
 @Component
-public class RoomAdminAspect {
+public class RoomAdminValidationAspect {
     private final RoomRepository roomRepository;
-    private final Logger logger = LoggerFactory.getLogger(RoomAdminAspect.class);
+    private final Logger logger = LoggerFactory.getLogger(RoomAdminValidationAspect.class);
 
-    public RoomAdminAspect(final RoomRepository roomRepository) {
+    public RoomAdminValidationAspect(final RoomRepository roomRepository) {
         this.roomRepository = roomRepository;
     }
 
@@ -66,6 +66,8 @@ public class RoomAdminAspect {
                 try {
                     id.set((Long) field.get(requestDto));
                     logger.debug("Room ID found in requestBody - [{}]", id);
+                } catch (NullPointerException e) {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND);
                 } catch (IllegalAccessException e) {
                     throw new RuntimeException(e);
                 }
@@ -83,6 +85,8 @@ public class RoomAdminAspect {
                 try {
                     id.set((Long) field.get(requestDto));
                     logger.debug("RoomAdmin ID found in requestBody - [{}]", id);
+                } catch (NullPointerException e) {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND);
                 } catch (IllegalAccessException e) {
                     throw new RuntimeException(e);
                 }
