@@ -8,5 +8,6 @@ public interface MessageCreator {
 
     MessageEvent createMessageFromRequest(Request request, String message);
     MessageEvent createSimpleMessage(MessageParticipant messageSender, MessageParticipant messageRecipient, String message);
+    MessageEvent createSimpleMessage(MessageParticipant messageRecipient, String message);
 
 }

@@ -24,6 +24,18 @@ public class MessageCreatorImpl implements MessageCreator {
     }
 
     @Override
+    public MessageEvent createSimpleMessage(final MessageParticipant messageRecipient, final String message) {
+        return MessageEvent.builder()
+                .senderName(messageRecipient.getParticipantName())
+                .senderId(messageRecipient.getParticipantId())
+                .recipientId(messageRecipient.getParticipantId())
+                .messageType(MessageType.SIMPLE_MESSAGE)
+                .message(message)
+                .sendTime(LocalDateTime.now())
+                .build();
+    }
+
+    @Override
     public MessageEvent createMessageFromRequest(final Request request, final String message) {
         return MessageEvent.builder()
                 .senderName(request.getRequesterName())
