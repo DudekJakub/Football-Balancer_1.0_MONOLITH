@@ -5,6 +5,7 @@ import com.dudek.footballbalancer.model.dto.skill.SkillSimpleDto;
 import com.dudek.footballbalancer.model.dto.skill.SkillsUpdateRequestDto;
 import com.dudek.footballbalancer.model.dto.skill.SkillsUpdateResponseDto;
 import com.dudek.footballbalancer.model.entity.Player;
+import com.dudek.footballbalancer.model.entity.Room;
 import com.dudek.footballbalancer.model.entity.Skill;
 import com.dudek.footballbalancer.model.entity.SkillTemplate;
 import com.dudek.footballbalancer.repository.PlayerRepository;
@@ -100,5 +101,11 @@ public class SkillService {
                     newSkill.setSkillTemplate(skillTemplate);
                     return skillRepository.save(newSkill);
                 }).collect(Collectors.toSet());
+    }
+
+    void assignSkillsForNewPlayer(final Player savedPlayer, final Room targetRoom) {
+        Set<SkillTemplate> roomSkillTemplates = targetRoom.getSkillTemplatesForRoom();
+        Set<Skill> newSKillsForPlayer = createSkillsFromRoomSkillTemplatesForNewPlayerInRoom(roomSkillTemplates, savedPlayer);
+        savedPlayer.setSkills(newSKillsForPlayer);
     }
 }
