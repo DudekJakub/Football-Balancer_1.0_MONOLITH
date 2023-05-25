@@ -28,6 +28,7 @@ public class PlayerMapperImpl implements PlayerMapper {
                 .lastName(player.getLastName())
                 .sex(player.getSex())
                 .generalOverall(player.getGeneralOverall())
+                .roomId(player.getRoom().getId())
                 .linkedRoomUser(player.getUser() != null ? userMapper.userToSimpleDto(player.getUser()) : null)
                 .build();
     }

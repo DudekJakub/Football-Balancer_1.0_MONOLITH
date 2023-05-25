@@ -39,5 +39,5 @@ public class PlayerNewRequestDto {
 
     @Nullable
     @Positive
-    private Long userToLinkId;
+    private Long userToLinkWithId;
 }
