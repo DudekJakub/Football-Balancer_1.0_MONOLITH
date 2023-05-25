@@ -27,6 +27,8 @@ import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.dudek.footballbalancer.service.util.RequestContextHolderUtil.*;
+
 @Service
 public class RoomBasicManagementService {
 
@@ -132,8 +134,10 @@ public class RoomBasicManagementService {
         if (requestDto.getLocation() != null) {
             FieldLocation roomLocation = prepareFieldLocationFromRequest(requestDto.getLocation());
             targetRoomFromDb.setFieldLocation(roomLocation);
+            setContextAttribute(TARGET_ROOM, targetRoomFromDb);
             return new RoomEditResponseDto(targetRoomFromDb, roomLocation);
         }
+        setContextAttribute(TARGET_ROOM, targetRoomFromDb);
         return new RoomEditResponseDto(targetRoomFromDb);
     }
 
@@ -150,6 +154,7 @@ public class RoomBasicManagementService {
             targetRoomFromDb.setNextMatchDate(nextMatchLocalDateTime);
             targetRoomFromDb.setNextMatchRegistrationStartDate(nextMatchRegistrationStartDate);
             targetRoomFromDb.setNextMatchRegistrationEndDate(nextMatchRegistrationEndDate);
+            setContextAttribute(TARGET_ROOM, targetRoomFromDb);
         } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided dates are in incorrect order or are not present.");
         }

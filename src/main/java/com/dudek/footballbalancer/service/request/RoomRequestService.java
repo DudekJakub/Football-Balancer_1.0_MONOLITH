@@ -7,12 +7,9 @@ import com.dudek.footballbalancer.model.entity.request.Request;
 import com.dudek.footballbalancer.model.entity.request.RequestStatus;
 import com.dudek.footballbalancer.model.entity.request.RequestType;
 import com.dudek.footballbalancer.model.entity.request.Requestable;
-import com.dudek.footballbalancer.model.message.MessageEvent;
 import com.dudek.footballbalancer.repository.RequestRepository;
 import com.dudek.footballbalancer.repository.RoomRepository;
 import com.dudek.footballbalancer.repository.UserRepository;
-import com.dudek.footballbalancer.service.message.MessageCreator;
-import com.dudek.footballbalancer.service.message.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +17,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
+import java.util.Map;
+
+import static com.dudek.footballbalancer.service.util.RequestContextHolderUtil.*;
 
 @Service
 public class RoomRequestService {
@@ -27,17 +27,12 @@ public class RoomRequestService {
     private final RoomRepository roomRepository;
     private final RequestRepository requestRepository;
     private final UserRepository userRepository;
-    private final MessageCreator messageCreator;
-    private final MessageService messageService;
 
     @Autowired
-    public RoomRequestService(final RoomRepository roomRepository, final RequestRepository requestRepository, final UserRepository userRepository,
-                              final MessageCreator messageCreator, final MessageService messageService) {
+    public RoomRequestService(final RoomRepository roomRepository, final RequestRepository requestRepository, final UserRepository userRepository) {
         this.roomRepository = roomRepository;
         this.requestRepository = requestRepository;
         this.userRepository = userRepository;
-        this.messageCreator = messageCreator;
-        this.messageService = messageService;
     }
 
     @Transactional
@@ -53,16 +48,23 @@ public class RoomRequestService {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Request already sent or processed successfully!");
             } else {
                 request.setStatus(RequestStatus.PENDING);
-                MessageEvent messageFromRequest = messageCreator.createMessageFromRequest(request, "New member request from user: " + requesterFromDb.getUsername());
-                messageService.sendMessageForRoomAdmins(messageFromRequest, targetRoomFromDb.getId());
+
+                setContextAttributes(Map.of(
+                        TARGET_ROOM, targetRoomFromDb,
+                        TARGET_USER, requesterFromDb,
+                        NEW_MEMBER_REQUEST, request
+                ));
             }
         }, () -> {
             Request newMemberRequest = createRequest(targetRoomFromDb, requesterFromDb.getId(), requesterFromDb.getUsername(), RequestType.NEW_MEMBER);
             Request savedNewMemberRequest = requestRepository.save(newMemberRequest);
             targetRoomFromDb.addRequest(savedNewMemberRequest);
 
-            MessageEvent messageFromRequest = messageCreator.createMessageFromRequest(savedNewMemberRequest, "New member request from user: " + requesterFromDb.getUsername());
-            messageService.sendMessageForRoomAdmins(messageFromRequest, targetRoomFromDb.getId());
+            setContextAttributes(Map.of(
+                    TARGET_ROOM, targetRoomFromDb,
+                    TARGET_USER, requesterFromDb,
+                    NEW_MEMBER_REQUEST, savedNewMemberRequest
+            ));
         });
     }
 
@@ -71,18 +73,18 @@ public class RoomRequestService {
         Room targetRoomFromDb = roomRepository.findById(requestDto.getRoomId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        Request newMemberRequestFromDb = findRequestAndCheckStatus(targetRoomFromDb, requestDto.getUserId());
-
         User requesterFromDb = userRepository.findById(requestDto.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        Request newMemberRequestFromDb = findRequestAndCheckStatus(targetRoomFromDb, requestDto.getUserId());
 
         newMemberRequestFromDb.setStatus(RequestStatus.ACCEPTED);
         targetRoomFromDb.getUsersInRoom().add(requesterFromDb);
 
-        MessageEvent simpleMessageForRoom = messageCreator.createSimpleMessage(targetRoomFromDb, targetRoomFromDb, "Room has gain new member: " + requesterFromDb.getUsername());
-        messageService.sendMessageForRoomUsers(simpleMessageForRoom, targetRoomFromDb.getId());
-        MessageEvent simpleMessageForUser = messageCreator.createSimpleMessage(targetRoomFromDb, requesterFromDb, "Your request to become member of room: '" + targetRoomFromDb.getName() + "' has changed status to: ACCEPTED");
-        messageService.sendMessageForPrivateUser(simpleMessageForUser, requesterFromDb.getId());
+        setContextAttributes(Map.of(
+                TARGET_ROOM, targetRoomFromDb,
+                TARGET_USER, requesterFromDb
+        ));
     }
 
     @Transactional
@@ -90,17 +92,17 @@ public class RoomRequestService {
         Room targetRoomFromDb = roomRepository.findById(requestDto.getRoomId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        Request newMemberRequestFromDb = findRequestAndCheckStatus(targetRoomFromDb, requestDto.getUserId());
-
         User requesterFromDb = userRepository.findById(requestDto.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
+        Request newMemberRequestFromDb = findRequestAndCheckStatus(targetRoomFromDb, requestDto.getUserId());
+
         newMemberRequestFromDb.setStatus(RequestStatus.REJECTED);
 
-        MessageEvent simpleMessageForRoom = messageCreator.createSimpleMessage(targetRoomFromDb, targetRoomFromDb, "Member request from user " + requesterFromDb.getUsername() + " has been rejected.");
-        messageService.sendMessageForRoomAdmins(simpleMessageForRoom, targetRoomFromDb.getId());
-        MessageEvent simpleMessageForUser = messageCreator.createSimpleMessage(targetRoomFromDb, requesterFromDb, "Your request to become member of room: '" + targetRoomFromDb.getName() + "' has changed status to: REJECTED");
-        messageService.sendMessageForPrivateUser(simpleMessageForUser, requesterFromDb.getId());
+        setContextAttributes(Map.of(
+                TARGET_ROOM, targetRoomFromDb,
+                TARGET_USER, requesterFromDb
+        ));
     }
 
     private Request createRequest(final Room targetRoom, final Long requesterId, final String requesterName, final RequestType requestType) {
