@@ -38,6 +38,7 @@ public class RoomBasicManagementController {
     }
 
     @GetMapping("/paginated/{userId}")
+    @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<List<RoomSimpleDto>> findPaginatedByUserId(
             @RequestParam(value = "pageNo", defaultValue = "0") int pageNumber,
             @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
@@ -54,26 +55,26 @@ public class RoomBasicManagementController {
     }
 
     @PostMapping("/enter")
-    @SecurityRequirement(name = "JWT")
+    @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<RoomEnteredResponseDto> enterRoom(@RequestBody RoomEnterRequestDto requestDto) {
         return ResponseEntity.ok(roomBasicManagementService.enterRoom(requestDto));
     }
     @PostMapping
-    @SecurityRequirement(name = "JWT")
+    @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<RoomNewResponseDto> createRoom(@RequestBody RoomNewRequestDto requestDto) {
         return ResponseEntity.ok(roomBasicManagementService.createRoom(requestDto));
     }
 
     @PutMapping("/{roomId}")
-    @SecurityRequirement(name = "JWT")
     @RequiresRoomAdmin
+    @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<RoomEditResponseDto> updateRoom(@PathVariable @RoomId Long roomId, @RequestBody RoomEditRequestDto requestDto) {
         return ResponseEntity.ok(roomBasicManagementService.updateRoom(roomId, requestDto));
     }
 
     @PatchMapping("/next-match-all-dates/{roomId}")
-    @SecurityRequirement(name = "JWT")
     @RequiresRoomAdmin
+    @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<Void> updateNextMatchDates(@PathVariable @RoomId Long roomId, @RequestBody RoomNewDatesRequestDto requestDto) {
         roomBasicManagementService.updateNextMatchDates(roomId, requestDto);
         return ResponseEntity.noContent().build();

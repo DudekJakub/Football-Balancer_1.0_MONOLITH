@@ -5,6 +5,7 @@ import com.dudek.footballbalancer.model.dto.skill.SkillsUpdateRequestDto;
 import com.dudek.footballbalancer.model.dto.skill.SkillsUpdateResponseDto;
 import com.dudek.footballbalancer.service.SkillService;
 import com.dudek.footballbalancer.validation.customAnnotation.RequiresRoomAdmin;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,12 +26,14 @@ public class SkillController {
     }
 
     @GetMapping("/all-by-playerId")
+    @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<List<SkillSimpleDto>> findPlayerSkills(@RequestParam("playerId") Long playerId) {
         return ResponseEntity.ok(skillService.findPlayerSkills(playerId));
     }
 
     @PutMapping("/all-for-player-by-playerId")
     @RequiresRoomAdmin
+    @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<SkillsUpdateResponseDto> updateSkillsForPlayer(@RequestBody SkillsUpdateRequestDto requestDto) {
         return ResponseEntity.ok(skillService.updateSkillsForPlayer(requestDto));
     }
