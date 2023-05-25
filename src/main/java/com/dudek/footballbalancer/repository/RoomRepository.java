@@ -23,8 +23,11 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     @Query("SELECT r FROM Room r LEFT JOIN FETCH r.playersInRoom WHERE r.id = ?1")
     Optional<Room> findByIdFetchPlayersInRoom(@NonNull Long id);
 
-    @Query("SELECT r FROM Room r LEFT JOIN FETCH r.skillTemplatesForRoom WHERE r.id = ?1")
-    Optional<Room> findByIdFetchSkillTemplates(@NonNull Long id);
+    @Query("SELECT r FROM Room r " +
+            "LEFT JOIN FETCH r.skillTemplatesForRoom " +
+            "LEFT JOIN FETCH r.usersInRoom " +
+            "WHERE r.id = ?1")
+    Optional<Room> findByIdFetchSkillTemplatesAndUsers(@NonNull Long id);
 
     @Query("SELECT r FROM Room r " +
             "LEFT JOIN FETCH r.fieldLocation " +
