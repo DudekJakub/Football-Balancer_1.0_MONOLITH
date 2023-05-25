@@ -20,11 +20,13 @@ public class RoomMapperImpl implements RoomMapper {
 
     private final FieldLocationMapper fieldLocationMapper;
     private final UserMapper userMapper;
+    private final PlayerMapper playerMapper;
 
     @Autowired
-    public RoomMapperImpl(final FieldLocationMapper fieldLocationMapper, final UserMapper userMapper) {
+    public RoomMapperImpl(final FieldLocationMapper fieldLocationMapper, final UserMapper userMapper, final PlayerMapper playerMapper) {
         this.fieldLocationMapper = fieldLocationMapper;
         this.userMapper = userMapper;
+        this.playerMapper = playerMapper;
     }
 
     @Override
@@ -41,6 +43,7 @@ public class RoomMapperImpl implements RoomMapper {
                 .nextMatchRegistrationEndDate(room.getNextMatchRegistrationEndDate())
                 .users(userMapper.userCollectionToSimpleDtoForRoomList(room.getUsersInRoom(), room))
                 .admins(userMapper.userCollectionToSimpleDtoForRoomList(room.getAdminsInRoom(), room))
+                .players(playerMapper.playerCollectionToSimpleDtoList(room.getPlayersInRoom()))
                 .build();
     }
 
