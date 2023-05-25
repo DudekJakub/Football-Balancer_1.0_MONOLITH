@@ -22,7 +22,7 @@ public class Skill {
     @JoinColumn(name = "player_id", nullable = false)
     private Player player;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
+    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
     @JoinColumn(name = "skill_template_id", nullable = false)
     private SkillTemplate skillTemplate;
 
